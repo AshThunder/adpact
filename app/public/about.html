@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>How it Works | AdPact</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --saans: 'Inter', sans-serif;
+            --color-brand-orange: #ff5600;
+        }
+
+        body {
+            font-family: var(--saans);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .step-card:hover .step-number {
+            transform: translateY(-4px);
+            background-color: #111111;
+            color: #ffffff;
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e6e1df",
+                        "tertiary-fixed-dim": "#cac6c3",
+                        "inverse-on-surface": "#f4f0ef",
+                        "outline-variant": "#c4c7c7",
+                        "surface-bright": "#fdf8f8",
+                        "tertiary": "#000000",
+                        "on-primary-fixed": "#1c1b1b",
+                        "on-surface-variant": "#444748",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#1d1b1a",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#1d1b1a",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#313030",
+                        "on-secondary-container": "#fffbff",
+                        "error-container": "#ffdad6",
+                        "outline": "#747878",
+                        "surface-2": "#ebe7e1",
+                        "primary": "#000000",
+                        "surface-container-high": "#ebe7e6",
+                        "on-background": "#1c1b1b",
+                        "background": "#fdf8f8",
+                        "surface-container-highest": "#e5e2e1",
+                        "on-error-container": "#93000a",
+                        "secondary-container": "#d04500",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#ffdbcf",
+                        "on-primary-container": "#858383",
+                        "canvas": "#f5f1ec",
+                        "ink-subtle": "#7b7b78",
+                        "surface-variant": "#e5e2e1",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#5f5e5e",
+                        "ink-muted": "#626260",
+                        "hairline": "#d3cec6",
+                        "primary-fixed": "#e5e2e1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#868381",
+                        "surface-container": "#f1edec",
+                        "on-primary-fixed-variant": "#474646",
+                        "surface-dim": "#ddd9d8",
+                        "surface-1": "#ffffff",
+                        "secondary": "#a63500",
+                        "on-tertiary-fixed-variant": "#484645",
+                        "surface": "#fdf8f8",
+                        "primary-container": "#1c1b1b",
+                        "fin-orange": "#ff5600",
+                        "on-secondary-fixed": "#380c00",
+                        "on-surface": "#1c1b1b",
+                        "inverse-primary": "#c8c6c5",
+                        "surface-container-low": "#f7f3f2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "xxs": "4px",
+                        "xs": "8px",
+                        "sm": "12px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "section": "96px",
+                        "xxl": "48px"
+                    },
+                    "fontFamily": {
+                        "eyebrow": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "subhead": ["Inter"],
+                        "caption": ["Inter"],
+                        "mono": ["Inter"],
+                        "display-xl": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "display-md": ["Inter"],
+                        "button": ["Inter"],
+                        "body": ["Inter"],
+                        "card-title": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline": ["Inter"]
+                    },
+                    "fontSize": {
+                        "eyebrow": ["16px", {"lineHeight": "1.3", "fontWeight": "500"}],
+                        "body-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "subhead": ["22px", {"lineHeight": "1.4", "letterSpacing": "-0.2px", "fontWeight": "400"}],
+                        "caption": ["14px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "mono": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "display-xl": ["80px", {"lineHeight": "1.05", "letterSpacing": "-2.0px", "fontWeight": "500"}],
+                        "display-lg": ["64px", {"lineHeight": "1.1", "letterSpacing": "-1.4px", "fontWeight": "500"}],
+                        "display-md": ["48px", {"lineHeight": "1.15", "letterSpacing": "-0.8px", "fontWeight": "500"}],
+                        "button": ["17px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                        "body": ["18px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "card-title": ["26px", {"lineHeight": "1.25", "letterSpacing": "-0.3px", "fontWeight": "500"}],
+                        "body-lg": ["20px", {"lineHeight": "1.5", "letterSpacing": "-0.1px", "fontWeight": "400"}],
+                        "headline": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.5px", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-canvas text-on-surface">
+    <!-- TopNavBar -->
+    <nav class="fixed top-0 w-full z-50 bg-canvas/80 backdrop-blur-md border-b border-hairline h-16 px-lg flex justify-between items-center max-w-full">
+        <div class="flex items-center gap-xl">
+            <a href="/" class="text-headline font-headline text-primary no-underline hover:opacity-90 transition-opacity flex items-center gap-2">
+                <img src="/logo.svg" alt="AdPact Logo" class="h-8 w-8" />
+                AdPact
+            </a>
+            <div class="hidden md:flex items-center gap-lg">
+                <a class="text-ink-subtle hover:text-primary transition-colors font-body text-body-sm no-underline" href="/">Marketplace</a>
+                <a class="text-ink-subtle hover:text-primary transition-colors font-body text-body-sm no-underline" href="/">My Campaigns</a>
+                <a class="text-ink-subtle hover:text-primary transition-colors font-body text-body-sm no-underline" href="/">Analytics</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-md">
+            <span class="hidden md:flex items-center gap-xs text-ink-subtle font-body text-body-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                StudioNet Connected
+            </span>
+            <a href="/" class="bg-primary text-on-primary px-md py-xs rounded-lg font-button text-button hover:opacity-80 transition-all active:scale-95 no-underline">Open App</a>
+        </div>
+    </nav>
+
+    <main class="pt-16">
+        <!-- Hero Section -->
+        <section class="py-section px-lg max-w-7xl mx-auto text-center">
+            <span class="font-eyebrow text-eyebrow text-fin-orange uppercase tracking-wider mb-md block">Trustless Transparency</span>
+            <h1 class="font-display-lg text-display-lg md:text-display-xl text-primary mb-lg max-w-4xl mx-auto">Sponsorships secured by code, not just contracts.</h1>
+            <p class="font-body-lg text-body-lg text-ink-muted max-w-2xl mx-auto">We've automated the entire creator-brand relationship to ensure payment only happens when performance is verified.</p>
+        </section>
+
+        <!-- How It Works Bento Grid -->
+        <section class="pb-section px-lg max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+                <!-- Step 1 -->
+                <div class="md:col-span-7 bg-surface-1 border border-hairline rounded-xl p-xl step-card transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="step-number w-12 h-12 rounded-full border border-hairline flex items-center justify-center font-bold mb-xl transition-all">1</div>
+                        <h3 class="font-card-title text-card-title text-primary mb-md">Campaign Creation &amp; Escrow</h3>
+                        <p class="font-body text-body text-ink-muted mb-xl">Brands define campaign rules—platform, mentions, hashtags, and duration. Funds are locked into an immutable smart contract on StudioNet, visible to all potential creators.</p>
+                    </div>
+                    <div class="overflow-hidden rounded-lg border border-hairline mt-auto">
+                        <img class="w-full h-48 object-cover" alt="Campaign Escrow Dashboard UI" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvryzPROfjhAyl3BRxUU3asXZux0SF4g2wwhYx_BrGU_CmUAoyyV-OO86YGOYpxZClWBkQgfcGYQuhWIY9g6EmrpPyL9YtPiK6cEZ-xCJrb2d67LIPt-Zr_YMaQCyYzejgQAP3S_TIhI2chRVHa99O0RpDpOQZiVq3r-2wZuzx1DtWNEmyGPO4E5aqEb9-_jY8EUaX6jH7ScwiGs7POWz8P1MgMeKLnUPxMSLRZPFiVmEjDToc0Iyh8MA488xGNIZk0gPsgFMcQo0s"/>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="md:col-span-5 bg-surface-1 border border-hairline rounded-xl p-xl step-card transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="step-number w-12 h-12 rounded-full border border-hairline flex items-center justify-center font-bold mb-xl transition-all">2</div>
+                        <h3 class="font-card-title text-card-title text-primary mb-md">Creator Application &amp; Draft</h3>
+                        <p class="font-body text-body text-ink-muted mb-xl">Creators apply with their portfolio and social handle. Once selected, they submit content drafts directly through the platform for brand alignment before publishing.</p>
+                    </div>
+                    
+                    <!-- Example Creator Card (Personalized to User's Wallet) -->
+                    <div class="mt-auto bg-canvas p-md rounded-lg border border-hairline">
+                        <div class="flex items-center gap-md mb-sm">
+                            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">CG</div>
+                            <div class="flex-1">
+                                <div class="font-body text-body-sm font-semibold text-primary">Chris Gold</div>
+                                <a href="https://x.com/ChrisGold__" target="_blank" class="text-caption text-fin-orange hover:underline flex items-center gap-1 no-underline">
+                                    @ChrisGold__
+                                    <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+                                </a>
+                            </div>
+                            <span class="bg-primary/5 text-primary text-[10px] uppercase font-bold tracking-wider px-xs py-xxs rounded border border-hairline">Verified Creator</span>
+                        </div>
+                        <div class="bg-white border border-hairline rounded p-md text-xs text-ink-muted">
+                            <p class="font-semibold text-primary mb-1">Draft Submission Preview:</p>
+                            "Excited to partner with GenLayer on their StudioNet launch! Testing the first-ever decentralized, AI-consensus escrow platform. Fully trustless sponsorships are here. 🚀 #GenLayer #StudioNet"
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="md:col-span-5 bg-surface-1 border border-hairline rounded-xl p-xl step-card transition-all relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute top-0 right-0 p-lg">
+                        <span class="material-symbols-outlined text-fin-orange" style="font-variation-settings: 'FILL' 1;">psychology</span>
+                    </div>
+                    <div>
+                        <div class="step-number w-12 h-12 rounded-full border border-hairline flex items-center justify-center font-bold mb-xl transition-all">3</div>
+                        <h3 class="font-card-title text-card-title text-primary mb-md">AI Verification</h3>
+                        <p class="font-body text-body text-ink-muted mb-xl">Decentralized nodes scan live posts in real-time. Our AI confirms that required hashtags are present, brand tags are correct, and the post remains active for the agreed period.</p>
+                    </div>
+                    <div class="mt-auto border-t border-hairline pt-md flex items-center justify-between">
+                        <span class="font-caption text-caption text-fin-orange font-bold uppercase tracking-widest">AI Audit Active</span>
+                        <div class="flex gap-1">
+                            <div class="w-2 h-2 rounded-full bg-fin-orange animate-pulse"></div>
+                            <div class="w-2 h-2 rounded-full bg-fin-orange/40"></div>
+                            <div class="w-2 h-2 rounded-full bg-fin-orange/20"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="md:col-span-7 bg-surface-1 border border-hairline rounded-xl p-xl step-card transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="step-number w-12 h-12 rounded-full border border-hairline flex items-center justify-center font-bold mb-xl transition-all">4</div>
+                        <h3 class="font-card-title text-card-title text-primary mb-md">Automated Payout</h3>
+                        <p class="font-body text-body text-ink-muted mb-xl">The moment requirements are met, the smart contract triggers an instant release of funds. No invoices, no waiting net-30, no chasing payments. It’s trustless and immediate.</p>
+                    </div>
+                    <div class="mt-auto flex gap-md">
+                        <div class="flex-1 h-32 bg-surface-container-highest rounded-lg flex flex-col items-center justify-center text-center p-md">
+                            <span class="material-symbols-outlined text-primary mb-xs">verified</span>
+                            <span class="font-caption text-caption text-primary font-medium">Post Verified</span>
+                        </div>
+                        <div class="flex-1 h-32 bg-primary rounded-lg flex flex-col items-center justify-center text-center p-md">
+                            <span class="material-symbols-outlined text-white mb-xs">payments</span>
+                            <span class="font-caption text-caption text-white font-medium">Payment Sent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Protocol Details (More Info Added) -->
+        <section class="py-section bg-canvas border-t border-hairline">
+            <div class="px-lg max-w-7xl mx-auto">
+                <div class="text-center mb-xxl">
+                    <span class="font-eyebrow text-eyebrow text-fin-orange uppercase tracking-wider mb-md block">Technical Protocol</span>
+                    <h2 class="font-display-md text-display-md text-primary mb-md">AI-Powered State Machine</h2>
+                    <p class="font-body text-body text-ink-muted max-w-3xl mx-auto">
+                        AdPact replaces human intermediaries with decentralized consensus. Every collaboration moves through strict cryptographic states verified by independent validator nodes.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-xl">
+                    <!-- State Loop Column -->
+                    <div class="bg-white border border-hairline p-lg rounded-xl shadow-sm flex flex-col">
+                        <h3 class="font-card-title text-card-title text-primary mb-md flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-fin-orange">sync_alt</span>
+                            State Machine Flow
+                        </h3>
+                        <p class="font-body text-body-sm text-ink-muted mb-md">
+                            Every sponsorship deal transitions through a secure sequence of states to enforce compliance and eliminate chargebacks:
+                        </p>
+                        <ul class="space-y-sm font-body text-body-sm text-ink-muted mt-auto">
+                            <li class="flex items-start gap-xs">
+                                <span class="material-symbols-outlined text-fin-orange text-sm mt-0.5">check_circle</span>
+                                <div><strong>Open for Applications:</strong> Creators submit handles & proposal text.</div>
+                            </li>
+                            <li class="flex items-start gap-xs">
+                                <span class="material-symbols-outlined text-fin-orange text-sm mt-0.5">check_circle</span>
+                                <div><strong>Escrow Deposited:</strong> Advertiser approves the applicant, locking the budget in the contract.</div>
+                            </li>
+                            <li class="flex items-start gap-xs">
+                                <span class="material-symbols-outlined text-fin-orange text-sm mt-0.5">check_circle</span>
+                                <div><strong>Draft Approved:</strong> Text drafts are aligned and signed off by the advertiser.</div>
+                            </li>
+                            <li class="flex items-start gap-xs">
+                                <span class="material-symbols-outlined text-fin-orange text-sm mt-0.5">check_circle</span>
+                                <div><strong>AI Consensus Check:</strong> Nodes fetch the live tweet and run NLP-checks in parallel.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- AI Node Logic Column -->
+                    <div class="bg-white border border-hairline p-lg rounded-xl shadow-sm flex flex-col">
+                        <h3 class="font-card-title text-card-title text-primary mb-md flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-fin-orange">psychology</span>
+                            On-Chain LLM Consensus
+                        </h3>
+                        <p class="font-body text-body-sm text-ink-muted mb-md">
+                            Validator nodes fetch the live X post content and compare it with the approved draft and campaign guidelines using LLMs on-chain.
+                        </p>
+                        <div class="bg-canvas p-md rounded-lg font-mono text-xs text-primary space-y-xs mt-auto">
+                            <div class="font-bold">// Evaluation Logic</div>
+                            <div class="text-ink-muted">"Does X post {live_url} contain required keywords [{req_keywords}] and hashtags [{req_hashtags}] and match approved draft '{draft}'?"</div>
+                            <div class="text-fin-orange font-bold mt-sm">Status: MAJORITY_AGREE</div>
+                        </div>
+                    </div>
+
+                    <!-- Virtual Balance System Column -->
+                    <div class="bg-white border border-hairline p-lg rounded-xl shadow-sm flex flex-col">
+                        <h3 class="font-card-title text-card-title text-primary mb-md flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-fin-orange">account_balance_wallet</span>
+                            Virtual Escrow Balances
+                        </h3>
+                        <p class="font-body text-body-sm text-ink-muted mb-md">
+                            To ensure re-entrancy safety and optimal UX, verification results update the internal ledger <code>TreeMap[Address, u256]</code>.
+                        </p>
+                        <ul class="space-y-xs font-body text-body-sm text-ink-muted mt-auto">
+                            <li>• <strong>Instant Credit:</strong> Verification releases funds directly into the creator's virtual balance.</li>
+                            <li>• <strong>Manual Withdrawal:</strong> Creators trigger <code>withdraw_balance</code> whenever they are ready to claim funds.</li>
+                            <li>• <strong>Refunding:</strong> Cancelled collaborations credit the advertiser's virtual balance automatically.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="py-section bg-surface-1 border-t border-hairline">
+            <div class="px-lg max-w-5xl mx-auto">
+                <div class="text-center mb-xxl">
+                    <h2 class="font-display-md text-display-md text-primary mb-md">Common Questions</h2>
+                    <p class="font-body text-body text-ink-muted">Everything you need to know about the AdPact ecosystem.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-xxl">
+                    <!-- Advertisers FAQ -->
+                    <div>
+                        <div class="flex items-center gap-sm mb-lg">
+                            <span class="material-symbols-outlined text-primary">business_center</span>
+                            <h3 class="font-headline text-headline text-primary">For Advertisers</h3>
+                        </div>
+                        <div class="space-y-lg">
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    How is my budget protected?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">Your funds are held in a transparent smart contract. They cannot be accessed by the creator until the AI nodes verify that the post meets your specific criteria.</p>
+                            </details>
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    What if the post is deleted early?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">Campaigns specify a mandatory "Live Duration." If our verification nodes detect the post has been removed before this window closes, the payout is halted and the dispute mechanism is triggered.</p>
+                            </details>
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    How accurate is the AI verification?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">Our AI uses a multi-layered verification system with over 99.8% accuracy, cross-referencing visual elements, metadata, and platform APIs simultaneously.</p>
+                            </details>
+                        </div>
+                    </div>
+
+                    <!-- Creators FAQ -->
+                    <div>
+                        <div class="flex items-center gap-sm mb-lg">
+                            <span class="material-symbols-outlined text-primary">person_check</span>
+                            <h3 class="font-headline text-headline text-primary">For Creators</h3>
+                        </div>
+                        <div class="space-y-lg">
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    When do I get paid?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">Immediately. The smart contract executes the payment the second the verification nodes confirm your post meets the criteria. No manual approval required from the brand.</p>
+                            </details>
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    What platforms are supported?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">Currently, we support Instagram (Posts, Reels, Stories), TikTok, X (Twitter), and YouTube. We are expanding to LinkedIn and Twitch in late 2024.</p>
+                            </details>
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    Is my payment guaranteed?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">Yes. Because brands must fund the escrow contract *before* you start working, the money is already there. If you fulfill the requirements, the code guarantees your payout.</p>
+                            </details>
+                            <details class="group border-b border-hairline pb-md">
+                                <summary class="flex justify-between items-center cursor-pointer list-none font-body text-body font-medium text-primary">
+                                    How do I get testnet tokens (GEN)?
+                                    <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+                                </summary>
+                                <p class="mt-md font-body text-body-sm text-ink-muted">
+                                    To interact with AdPact on the testnet, you need test GEN tokens. You can request them instantly for free from our network faucets:
+                                    <br/><br/>
+                                    • For <strong>Bradbury Testnet</strong>: Visit the <a href="https://testnet-faucet.genlayer.foundation/" target="_blank" class="text-fin-orange hover:underline font-semibold">Bradbury Faucet</a>
+                                    <br/>
+                                    • For <strong>StudioNet</strong>: Claim them directly on the <a href="https://studio.genlayer.com/contracts" target="_blank" class="text-fin-orange hover:underline font-semibold">GenLayer Studio Contracts page</a>
+                                </p>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="py-section px-lg max-w-7xl mx-auto">
+            <div class="bg-primary-container text-on-primary rounded-xl p-xl md:p-xxl text-center relative overflow-hidden">
+                <div class="relative z-10">
+                    <h2 class="font-display-md text-display-md text-white mb-lg">Ready to build trustless partnerships?</h2>
+                    <div class="flex flex-col md:flex-row justify-center gap-md">
+                        <a href="/" class="bg-fin-orange text-white px-xl py-md rounded-lg font-button text-button hover:opacity-90 transition-all flex items-center justify-center gap-sm no-underline">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+                            Start a Campaign
+                        </a>
+                        <a href="/" class="bg-white text-primary px-xl py-md rounded-lg font-button text-button hover:bg-surface-container-high transition-all no-underline">
+                            Browse Opportunities
+                        </a>
+                    </div>
+                </div>
+                <!-- Abstract bg pattern -->
+                <div class="absolute inset-0 opacity-10 pointer-events-none">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-fin-orange rounded-full blur-[100px]"></div>
+                    <div class="absolute bottom-0 left-0 w-96 h-96 bg-primary-fixed rounded-full blur-[120px]"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-xl bg-canvas border-t border-hairline">
+        <div class="flex flex-col md:flex-row justify-between items-center px-lg max-w-7xl mx-auto gap-lg">
+            <div class="flex flex-col items-center md:items-start gap-xs">
+                <span class="font-headline text-sm text-primary">AdPact</span>
+                <p class="font-caption text-caption text-ink-subtle">© 2026 AdPact. Built on StudioNet.</p>
+            </div>
+            <div class="flex items-center gap-xl">
+                <a class="text-ink-subtle hover:text-primary transition-colors font-caption text-caption no-underline" href="/">App Marketplace</a>
+                <a class="text-ink-subtle hover:text-primary transition-colors font-caption text-caption no-underline" href="https://studio.genlayer.com" target="_blank">Studio</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple micro-interactions for FAQ
+        document.querySelectorAll('details').forEach((el) => {
+            el.addEventListener('toggle', () => {
+                if (el.open) {
+                    document.querySelectorAll('details').forEach((other) => {
+                        if (other !== el) other.open = false;
+                    });
+                }
+            });
+        });
+
+        // Sticky nav scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 10) {
+                nav.classList.add('shadow-sm');
+                nav.classList.add('bg-white/80');
+                nav.classList.add('backdrop-blur-md');
+            } else {
+                nav.classList.remove('shadow-sm');
+                nav.classList.remove('bg-white/80');
+                nav.classList.remove('backdrop-blur-md');
+            }
+        });
+    </script>
+</body>
+</html>
