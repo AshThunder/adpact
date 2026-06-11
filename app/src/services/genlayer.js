@@ -11,15 +11,15 @@ export const NETWORKS = {
     name: 'StudioNet',
     chain: studionet,
     rpcUrl: 'https://studio.genlayer.com/api',
-    chainId: 61998,
-    wagmiId: 61998,
+    chainId: 61999,
+    wagmiId: 61999,
   },
   bradbury: {
     key: 'bradbury',
     name: 'Bradbury Testnet',
     chain: testnetBradbury,
     rpcUrl: 'https://rpc-bradbury.genlayer.com',
-    chainId: 61997,
+    chainId: 4221,
     wagmiId: 4221, // Wagmi ID used for Bradbury
   },
   simulator: {
@@ -46,7 +46,7 @@ export function setNetwork(networkKey) {
 // ── Client Factory ───────────────────────────────────────
 export function getGenLayerClient(accountAddress = null) {
   const net = NETWORKS[selectedNetwork.value];
-  
+
   const clientConfig = {
     chain: {
       ...net.chain,
@@ -69,7 +69,7 @@ export async function syncSnapConnection() {
   }
 
   const net = NETWORKS[selectedNetwork.value];
-  
+
   // 1. Switch network in Wagmi / MetaMask if needed
   if (wagmiState.isConnected && wagmiState.chainId !== net.wagmiId) {
     try {
@@ -81,12 +81,12 @@ export async function syncSnapConnection() {
 
   // 2. Connect client and register/switch snap network
   const client = getGenLayerClient(wagmiState.address);
-  
+
   // Map our key to snap connect's network argument:
   // snap connect accepts 'studionet', 'testnetBradbury', 'localnet'
-  const snapNetworkKey = 
+  const snapNetworkKey =
     selectedNetwork.value === 'bradbury' ? 'testnetBradbury' :
-    selectedNetwork.value === 'simulator' ? 'localnet' : 'studionet';
+      selectedNetwork.value === 'simulator' ? 'localnet' : 'studionet';
 
   console.log(`Connecting GenLayer Snap to network: ${snapNetworkKey}`);
   await client.connect(snapNetworkKey);
