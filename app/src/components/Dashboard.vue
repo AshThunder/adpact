@@ -735,16 +735,16 @@ const filteredCampaigns = computed(() => {
   // 5. Sorting
   list = [...list].sort((a, b) => {
     if (sortOption.value === 'time') {
-      const idA = Number((a.id || '').replace('camp_', '')) || 0;
-      const idB = Number((b.id || '').replace('camp_', '')) || 0;
+      const idA = Number(String(a.id || '').replace('camp_', '')) || 0;
+      const idB = Number(String(b.id || '').replace('camp_', '')) || 0;
       return idB - idA; // Latest first
     } else if (sortOption.value === 'amount') {
       const budgetA = BigInt(a.atto_budget_per_creator || 0);
       const budgetB = BigInt(b.atto_budget_per_creator || 0);
       return budgetB > budgetA ? 1 : budgetB < budgetA ? -1 : 0; // Highest first
     } else if (sortOption.value === 'name') {
-      const nameA = (a.title || '').toLowerCase();
-      const nameB = (b.title || '').toLowerCase();
+      const nameA = String(a.title || '').toLowerCase();
+      const nameB = String(b.title || '').toLowerCase();
       return nameA.localeCompare(nameB); // A-Z
     }
     return 0;
