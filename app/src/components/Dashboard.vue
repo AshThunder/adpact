@@ -675,18 +675,20 @@ async function fetchUserApplications(campaignList) {
       while (retries > 0) {
         try {
           const apps = await escrow.value.getApplications(camp.id);
-          const collabs = await escrow.value.getCollaborations(camp.id);
           const hasApplied = apps.some(a => a.creator && a.creator.toLowerCase() === addr);
-          const userCollab = collabs.find(c => c.creator && c.creator.toLowerCase() === addr);
-          if (hasApplied || userCollab) {
+          
+          if (hasApplied) {
+            const collabs = await escrow.value.getCollaborations(camp.id);
+            const userCollab = collabs.find(c => c.creator && c.creator.toLowerCase() === addr);
+            
             results.push({
               ...camp,
               userStatus: userCollab ? 'collaborating' : 'applied',
               userCollaboration: userCollab || null,
             });
           }
-          // Small delay to prevent hitting 20 reqs/10s rate limit (2 reqs per loop)
-          await sleep(550); 
+          // We only sleep a tiny bit to be gentle, but since we cut reqs in half, it's fast!
+          await sleep(50);
           break; // Success, exit retry loop
         } catch (e) {
           const msg = e.message || e.toString();
