@@ -203,6 +203,18 @@ class InfluencerEscrow(gl.Contract):
         if sender == campaign.advertiser:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Advertiser cannot apply to their own campaign")
 
+        # Validate deadline has not passed
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc)
+            deadline_str = campaign.posting_deadline.replace("Z", "+00:00")
+            deadline = datetime.datetime.fromisoformat(deadline_str)
+            if now > deadline:
+                raise gl.vm.UserError(f"{ERROR_EXPECTED} Campaign posting deadline has passed")
+        except Exception as e:
+            if isinstance(e, gl.vm.UserError):
+                raise e
+            pass
+
         if campaign_id in self.applications and sender in self.applications[campaign_id]:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Already applied to this campaign")
 

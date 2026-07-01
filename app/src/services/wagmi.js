@@ -20,7 +20,7 @@ export const bradbury = {
 };
 
 export const studionet = {
-  id: 61998,
+  id: 61999,
   name: 'GenLayer StudioNet',
   nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
   rpcUrls: {
@@ -77,8 +77,10 @@ async function fetchBalance() {
       chainObj = glBradbury;
       rpcUrl = 'https://rpc-bradbury.genlayer.com';
     } else if (chainId.value === 61999) {
-      chainObj = glLocalnet;
-      rpcUrl = 'http://127.0.0.1:4000/api';
+      if (localStorage.getItem("selectedNetwork") === "simulator") {
+        chainObj = glLocalnet;
+        rpcUrl = 'http://127.0.0.1:4000/api';
+      }
     }
 
     const client = createClient({
@@ -116,7 +118,7 @@ function updateAccountState(account) {
   chainId.value = account.chainId || null;
   isConnected.value = account.isConnected || false;
   isConnecting.value = account.isConnecting || false;
-  
+
   if (account.isConnected && account.address) {
     fetchBalance();
   } else {

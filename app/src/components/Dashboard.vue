@@ -368,11 +368,24 @@
 
         <!-- Campaign List View -->
         <div v-else class="space-y-lg">
-          <div class="flex justify-between items-center">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
             <h2 class="font-subhead text-subhead text-primary">
               {{ selectedTab === 'all' ? 'All Opportunities' : 'My Managed Campaigns' }}
             </h2>
-            <div v-if="loading" class="spinner border-2 border-primary border-t-transparent w-4 h-4 rounded-full animate-spin"></div>
+            
+            <div class="flex items-center gap-1 bg-surface-2 p-1 rounded-lg border border-hairline w-full md:w-auto">
+              <button 
+                @click="statusFilter = 'active'"
+                :class="statusFilter === 'active' ? 'bg-surface-1 shadow-sm text-primary font-medium' : 'text-ink-subtle hover:text-primary'"
+                class="flex-1 md:flex-none px-4 py-1.5 rounded-md text-body-sm transition-all text-center"
+              >Active</button>
+              <button 
+                @click="statusFilter = 'ended'"
+                :class="statusFilter === 'ended' ? 'bg-surface-1 shadow-sm text-primary font-medium' : 'text-ink-subtle hover:text-primary'"
+                class="flex-1 md:flex-none px-4 py-1.5 rounded-md text-body-sm transition-all text-center"
+              >Ended</button>
+            </div>
+            <div v-if="loading" class="spinner border-2 border-primary border-t-transparent w-4 h-4 rounded-full animate-spin hidden md:block"></div>
           </div>
 
           <!-- Search & Filter Controls -->
@@ -442,7 +455,13 @@
                 </span>
                 
                 <span 
-                  v-if="camp.advertiser.toLowerCase() === account.address.toLowerCase()" 
+                  v-if="camp.posting_deadline && new Date() > new Date(camp.posting_deadline)" 
+                  class="bg-error/10 border border-error/20 text-error px-2 py-0.5 md:px-2.5 md:py-1 rounded font-mono text-[10px] md:text-[11px] uppercase font-bold"
+                >
+                  Expired
+                </span>
+                <span 
+                  v-else-if="camp.advertiser.toLowerCase() === account.address.toLowerCase()" 
                   class="bg-report-green/10 border border-report-green/20 text-report-green px-2 py-0.5 md:px-2.5 md:py-1 rounded font-mono text-[10px] md:text-[11px] uppercase font-bold"
                 >
                   Advertiser
@@ -636,12 +655,10 @@ async function fetchUserApplications(campaignList) {
   const results = [];
   const addr = props.account.address.toLowerCase();
   try {
-    const promises = campaignList.map(async (camp) => {
+    for (const camp of campaignList) {
       try {
-        const [apps, collabs] = await Promise.all([
-          escrow.value.getApplications(camp.id),
-          escrow.value.getCollaborations(camp.id)
-        ]);
+        const apps = await escrow.value.getApplications(camp.id);
+        const collabs = await escrow.value.getCollaborations(camp.id);
         const hasApplied = apps.some(a => a.creator && a.creator.toLowerCase() === addr);
         const userCollab = collabs.find(c => c.creator && c.creator.toLowerCase() === addr);
         if (hasApplied || userCollab) {
@@ -654,8 +671,7 @@ async function fetchUserApplications(campaignList) {
       } catch (e) {
         console.warn(`Could not fetch apps/collabs for campaign ${camp.id}:`, e);
       }
-    });
-    await Promise.all(promises);
+    }
     userApplications.value = results;
   } catch (err) {
     console.error('Failed to fetch user applications:', err);
@@ -671,6 +687,7 @@ const advertiserCampaignsCount = computed(() => {
 
 const searchQuery = ref('');
 const selectedPlatform = ref('all');
+const statusFilter = ref('active');
 
 const filteredCampaigns = computed(() => {
   let list = campaigns.value;
@@ -680,7 +697,15 @@ const filteredCampaigns = computed(() => {
     list = list.filter(c => c.advertiser.toLowerCase() === props.account.address.toLowerCase());
   }
 
-  // 2. Platform filter
+  // 2. Status filter (Active vs Ended)
+  list = list.filter(c => {
+    const isExpired = c.posting_deadline && new Date() > new Date(c.posting_deadline);
+    const isEnded = c.status === 'CLOSED' || c.status === 'CANCELLED' || isExpired;
+    if (statusFilter.value === 'active') return !isEnded;
+    return isEnded;
+  });
+
+  // 3. Platform filter
   if (selectedPlatform.value !== 'all') {
     list = list.filter(c => c.platform && c.platform.toLowerCase() === selectedPlatform.value.toLowerCase());
   }

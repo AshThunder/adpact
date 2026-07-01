@@ -15,7 +15,11 @@
             <p class="font-eyebrow text-eyebrow text-ink-subtle uppercase tracking-widest">Campaign Details</p>
             <h1 class="font-display-md text-display-md text-primary text-[22px] md:text-[32px]">{{ campaign.title }}</h1>
             <div class="flex flex-wrap items-center gap-sm mt-xs">
-              <span class="inline-flex items-center px-sm py-xxs rounded-full bg-surface-container-highest border border-hairline font-mono text-mono text-ink-subtle">
+              <span v-if="isExpired" class="inline-flex items-center px-sm py-xxs rounded-full bg-error-container/10 border border-error-container/30 font-mono text-mono text-error">
+                <span class="w-2 h-2 rounded-full bg-error mr-2"></span>
+                Expired
+              </span>
+              <span v-else class="inline-flex items-center px-sm py-xxs rounded-full bg-surface-container-highest border border-hairline font-mono text-mono text-ink-subtle">
                 <span class="w-2 h-2 rounded-full bg-fin-orange mr-2"></span>
                 {{ campaign.status === 'OPEN_FOR_APPLICATIONS' ? 'Reviewing Applications' : 'Reviewing Collaborations' }}
               </span>
@@ -73,11 +77,11 @@
         </div>
       </section>
 
-      <!-- Pending Applications Section -->
+      <!-- Applications Received Section -->
       <section class="space-y-md">
         <div class="flex items-center justify-between">
           <h2 class="font-subhead text-subhead text-primary">
-            Pending Applications ({{ applications.filter(a => a.status === 'PENDING').length }})
+            Applications Received ({{ applications.filter(a => a.status === 'PENDING').length }})
           </h2>
         </div>
         
@@ -95,7 +99,7 @@
               <tbody class="font-body text-body-sm divide-y divide-hairline">
                 <tr v-if="applications.filter(a => a.status === 'PENDING').length === 0">
                   <td colspan="4" class="p-lg text-center text-ink-subtle font-body text-body-sm bg-surface-bright">
-                    No pending applications at this time.
+                    No applications received yet.
                   </td>
                 </tr>
                 <tr 
@@ -580,6 +584,16 @@
               </span>
             </div>
           </div>
+          <div v-else-if="isExpired">
+            <h2 class="font-headline text-headline text-primary tracking-tight mb-md">Apply to Campaign</h2>
+            <div class="bg-error-container/20 border border-error-container/30 rounded-xl p-lg flex flex-col items-center text-center gap-sm">
+              <span class="material-symbols-outlined text-[40px] text-error">event_busy</span>
+              <p class="font-headline text-subhead text-error font-medium">Applications Closed</p>
+              <p class="font-body text-body-sm text-ink-subtle">
+                This campaign has passed its posting deadline ({{ formatDate(campaign.posting_deadline).split(',')[0] }}) and is no longer accepting new applications.
+              </p>
+            </div>
+          </div>
           <div v-else>
             <h2 class="font-headline text-headline text-primary tracking-tight mb-md">Apply to Campaign</h2>
             <form @submit.prevent="apply" class="flex flex-col gap-md">
@@ -623,9 +637,14 @@
         
         <!-- Campaign Brief Card -->
         <section class="bg-surface-1 border border-hairline rounded-xl p-xl shadow-sm text-left">
-          <div class="flex items-center gap-sm mb-md text-ink-subtle">
-            <span class="material-symbols-outlined text-[18px]">tag</span>
-            <span class="font-eyebrow text-eyebrow uppercase tracking-wider">{{ campaign.platform ? campaign.platform.toUpperCase() : 'Twitter' }} Promotion</span>
+          <div class="flex items-center justify-between mb-md text-ink-subtle">
+            <div class="flex items-center gap-sm">
+              <span class="material-symbols-outlined text-[18px]">tag</span>
+              <span class="font-eyebrow text-eyebrow uppercase tracking-wider">{{ campaign.platform ? campaign.platform.toUpperCase() : 'Twitter' }} Promotion</span>
+            </div>
+            <span v-if="isExpired" class="px-2 py-0.5 rounded-full bg-error-container/10 border border-error-container/30 font-mono text-[10px] text-error uppercase font-bold">
+              Expired
+            </span>
           </div>
 
           <h1 class="font-headline text-headline text-primary mb-md leading-tight tracking-[-0.5px]">
@@ -770,6 +789,11 @@ const myApplication = computed(() => {
 const myCollaboration = computed(() => {
   if (!props.account) return null;
   return collaborations.value.find(c => c.creator.toLowerCase() === props.account.address.toLowerCase());
+});
+
+const isExpired = computed(() => {
+  if (!props.campaign || !props.campaign.posting_deadline) return false;
+  return new Date() > new Date(props.campaign.posting_deadline);
 });
 
 // Parse custom storage arrays/JSON formats

@@ -1,6 +1,6 @@
 # AdPact — Decentralized, AI-Powered Creator Escrow & Sponsorship Marketplace
 
-AdPact is a next-generation decentralized marketplace that secures creator sponsorships through trustless smart contracts and on-chain AI consensus. Built on the **GenLayer** network, AdPact completely replaces manual human intermediaries, escrow fees, and payment delays (such as traditional Net-30 or Net-60 terms) with an automated, cryptographically secure state machine.
+AdPact is a decentralized marketplace that secures creator sponsorships through trustless smart contracts and on-chain AI consensus. Built on the **GenLayer** network, AdPact completely replaces manual human intermediaries, escrow fees, and payment delays (such as traditional Net-30 or Net-60 terms) with an automated, cryptographically secure state machine.
 
 ---
 
@@ -107,12 +107,35 @@ npm run dev
 ```
 Open the provided local server link (usually `http://localhost:5173`) in your browser.
 
-### 5. Running the Unit Tests
-To run in-memory Python direct-mode tests:
-```bash
-pip install -r requirements.txt
-pytest tests/direct/
-```
+### 5. Reviewer & Judge Sandbox Testing Guide (Safe & Local)
+
+Reviewers and judges can test the **complete, end-to-end intelligent contract lifecycle**—including AI-consensus oracle checks, web scraping, and deadline enforcement—without needing MetaMask, setting up private wallets, or deploying to a public network. 
+
+We utilize GenLayer's **direct test runner**, which simulates the GenVM execution environment in-memory.
+
+#### Run all tests:
+1. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Execute the test suite:
+   ```bash
+   pytest -v tests/direct/
+   ```
+
+#### What these tests validate:
+*   `test_influencer_escrow_lifecycle`: Simulates the complete creator-sponsor flow:
+    1. **Campaign Creation:** Advertiser creates a campaign with specific hashtags and keywords.
+    2. **Application:** Creator applies with their Twitter handle.
+    3. **Approval & Escrow Funding:** Advertiser approves the application and deposits the campaign budget.
+    4. **Milestone 1 (Draft Approval):** Creator submits a draft, and the advertiser approves it.
+    5. **Milestone 2 (AI Web Consensus):** Creator submits a live post URL. The test mocks a live tweet scraper response and the LLM consensus oracle to verify the content against the pre-approved draft, releasing the initial payout.
+    6. **Milestone 3 (Retention Check):** Travels forward in time and runs the retention monitoring check via mocked LLM oracle, completing the campaign and releasing the final payout to the creator's virtual ledger.
+    7. **Withdrawal:** Creator withdraws their earnings from the escrow.
+*   `test_influencer_escrow_deadline_check`: Verifies that the contract correctly enforces UTC-based posting deadlines and rejects applications if the campaign has expired.
+*   `test_user_balance` & `test_user_balance_no_withdraw`: Verifies the safety of the virtual ledger, ensuring funds can only be withdrawn by the intended creator.
+
+All tests run locally in under **1 second** and require absolutely no private credentials or setup.
 
 ---
 

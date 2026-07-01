@@ -152,3 +152,37 @@ def test_influencer_escrow_lifecycle(direct_vm, direct_deploy, direct_alice, dir
     # Assert virtual balance is cleared
     assert contract.get_balance(bob_hex) == "0"
 
+
+def test_influencer_escrow_deadline_check(direct_vm, direct_deploy, direct_alice, direct_bob):
+    # Deploy contract
+    contract = direct_deploy("contracts/influencer_escrow.py", sdk_version="v0.2.16")
+    alice_hex = "0x" + direct_alice.hex()
+    bob_hex = "0x" + direct_bob.hex()
+
+    # 1. Create Campaign (Alice is the Advertiser) with deadline in the past
+    direct_vm.sender = direct_alice
+    direct_vm.warp("2026-05-21T16:00:00Z")
+
+    campaign_id = contract.create_campaign(
+        title="Expired Campaign",
+        description="This campaign is already expired",
+        atto_budget_per_creator=10**18,
+        max_creators=1,
+        platform="twitter",
+        required_hashtags_json=json.dumps(["#expired"]),
+        required_keywords_json=json.dumps(["expired"]),
+        retention_duration_seconds=10,
+        posting_deadline="2026-05-20T00:00:00Z",  # Deadline in the past
+        payment_structure_json=json.dumps({"initial": 30, "retention": 70})
+    )
+
+    # 2. Try to Apply to Campaign (Bob is the Creator) and expect revert
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert("Campaign posting deadline has passed"):
+        contract.apply_to_campaign(
+            campaign_id=campaign_id,
+            twitter_handle="bob_tweets",
+            proposal_message="Applying to expired campaign."
+        )
+
+
