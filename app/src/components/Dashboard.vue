@@ -666,22 +666,39 @@ async function fetchUserApplications(campaignList) {
   loadingApplications.value = true;
   const results = [];
   const addr = props.account.address.toLowerCase();
+  
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   try {
     for (const camp of campaignList) {
-      try {
-        const apps = await escrow.value.getApplications(camp.id);
-        const collabs = await escrow.value.getCollaborations(camp.id);
-        const hasApplied = apps.some(a => a.creator && a.creator.toLowerCase() === addr);
-        const userCollab = collabs.find(c => c.creator && c.creator.toLowerCase() === addr);
-        if (hasApplied || userCollab) {
-          results.push({
-            ...camp,
-            userStatus: userCollab ? 'collaborating' : 'applied',
-            userCollaboration: userCollab || null,
-          });
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          const apps = await escrow.value.getApplications(camp.id);
+          const collabs = await escrow.value.getCollaborations(camp.id);
+          const hasApplied = apps.some(a => a.creator && a.creator.toLowerCase() === addr);
+          const userCollab = collabs.find(c => c.creator && c.creator.toLowerCase() === addr);
+          if (hasApplied || userCollab) {
+            results.push({
+              ...camp,
+              userStatus: userCollab ? 'collaborating' : 'applied',
+              userCollaboration: userCollab || null,
+            });
+          }
+          // Small delay to prevent hitting 20 reqs/10s rate limit (2 reqs per loop)
+          await sleep(550); 
+          break; // Success, exit retry loop
+        } catch (e) {
+          const msg = e.message || e.toString();
+          if (msg.includes('Rate limit') || msg.includes('LimitExceeded')) {
+            retries--;
+            console.warn(`Rate limit hit, retrying campaign ${camp.id} in 3s...`);
+            await sleep(3000);
+          } else {
+            console.warn(`Could not fetch apps/collabs for campaign ${camp.id}:`, e);
+            break; // Break retry loop on non-rate-limit errors
+          }
         }
-      } catch (e) {
-        console.warn(`Could not fetch apps/collabs for campaign ${camp.id}:`, e);
       }
     }
     userApplications.value = results;
