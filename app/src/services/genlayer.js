@@ -76,6 +76,31 @@ export async function syncSnapConnection() {
       await switchChain(wagmiConfig, { chainId: net.wagmiId });
     } catch (err) {
       console.warn("Wagmi switchChain error, falling back to manual add:", err);
+      // Attempt manual add
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: `0x${net.wagmiId.toString(16)}`,
+              chainName: net.name,
+              rpcUrls: [net.rpcUrl],
+              nativeCurrency: {
+                name: "GEN",
+                symbol: "GEN",
+                decimals: 18,
+              },
+            },
+          ],
+        });
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: `0x${net.wagmiId.toString(16)}` }],
+        });
+      } catch (addError) {
+        console.warn("Failed to manually add/switch network:", addError);
+        // Continue anyway, maybe the write will succeed if the wallet handles it
+      }
     }
   }
 
@@ -89,6 +114,19 @@ export async function syncSnapConnection() {
       selectedNetwork.value === 'simulator' ? 'localnet' : 'studionet';
 
   console.log(`Connecting GenLayer Snap to network: ${snapNetworkKey}`);
-  await client.connect(snapNetworkKey);
+  try {
+    await client.connect(snapNetworkKey);
+  } catch (err) {
+    console.warn("GenLayer Snap connect error:", err);
+    // If the error is about chain not supported or snaps not supported, we can fallback to standard EVM
+    const msg = err.message || err.toString();
+    if (msg.includes("not supported") || msg.includes("wallet_getSnaps")) {
+      console.log("Snap or chain switch not supported by wallet, proceeding with standard EVM wallet connection.");
+    } else {
+      // For other errors, we still continue and hope the standard EVM transaction works
+      console.log("Proceeding with standard EVM fallback.");
+    }
+  }
+
   return client;
 }
