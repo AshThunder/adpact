@@ -401,8 +401,20 @@
               />
             </div>
             
-            <!-- Platform filter pills -->
+            <!-- Platform filter pills & Sort -->
             <div class="flex flex-wrap items-center gap-sm w-full md:w-auto">
+              <!-- Sort Dropdown -->
+              <div class="relative flex items-center bg-surface-2 border border-hairline rounded-xl px-3 py-2 mr-2 transition-colors hover:bg-surface-3">
+                <span class="material-symbols-outlined text-[18px] text-ink-subtle mr-2">sort</span>
+                <select v-model="sortOption" class="bg-transparent text-body-sm text-primary font-medium focus:outline-none cursor-pointer appearance-none pr-5 w-full">
+                  <option value="time">Latest First</option>
+                  <option value="amount">Highest Budget</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+                <span class="material-symbols-outlined text-[16px] text-ink-subtle absolute right-2 pointer-events-none">expand_more</span>
+              </div>
+
+              <!-- Platform Pills -->
               <button 
                 v-for="plat in ['all', 'twitter', 'youtube', 'newsletter']"
                 :key="plat"
@@ -688,6 +700,7 @@ const advertiserCampaignsCount = computed(() => {
 const searchQuery = ref('');
 const selectedPlatform = ref('all');
 const statusFilter = ref('active');
+const sortOption = ref('time');
 
 const filteredCampaigns = computed(() => {
   let list = campaigns.value;
@@ -710,7 +723,7 @@ const filteredCampaigns = computed(() => {
     list = list.filter(c => c.platform && c.platform.toLowerCase() === selectedPlatform.value.toLowerCase());
   }
 
-  // 3. Search text query filter
+  // 4. Search text query filter
   if (searchQuery.value.trim() !== '') {
     const q = searchQuery.value.toLowerCase();
     list = list.filter(c => 
@@ -718,6 +731,24 @@ const filteredCampaigns = computed(() => {
       (c.description && c.description.toLowerCase().includes(q))
     );
   }
+
+  // 5. Sorting
+  list = [...list].sort((a, b) => {
+    if (sortOption.value === 'time') {
+      const idA = Number((a.id || '').replace('camp_', '')) || 0;
+      const idB = Number((b.id || '').replace('camp_', '')) || 0;
+      return idB - idA; // Latest first
+    } else if (sortOption.value === 'amount') {
+      const budgetA = BigInt(a.atto_budget_per_creator || 0);
+      const budgetB = BigInt(b.atto_budget_per_creator || 0);
+      return budgetB > budgetA ? 1 : budgetB < budgetA ? -1 : 0; // Highest first
+    } else if (sortOption.value === 'name') {
+      const nameA = (a.title || '').toLowerCase();
+      const nameB = (b.title || '').toLowerCase();
+      return nameA.localeCompare(nameB); // A-Z
+    }
+    return 0;
+  });
 
   return list;
 });
