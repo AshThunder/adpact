@@ -665,42 +665,16 @@ async function fetchUserApplications(campaignList) {
   if (!escrow.value || !props.account) return;
   loadingApplications.value = true;
   const results = [];
-  const addr = props.account.address.toLowerCase();
-  
-  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
   try {
+    const userApps = await escrow.value.getUserApplications(props.account.address);
     for (const camp of campaignList) {
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          const apps = await escrow.value.getApplications(camp.id);
-          const hasApplied = apps.some(a => a.creator && a.creator.toLowerCase() === addr);
-          
-          if (hasApplied) {
-            const collabs = await escrow.value.getCollaborations(camp.id);
-            const userCollab = collabs.find(c => c.creator && c.creator.toLowerCase() === addr);
-            
-            results.push({
-              ...camp,
-              userStatus: userCollab ? 'collaborating' : 'applied',
-              userCollaboration: userCollab || null,
-            });
-          }
-          // We only sleep a tiny bit to be gentle, but since we cut reqs in half, it's fast!
-          await sleep(50);
-          break; // Success, exit retry loop
-        } catch (e) {
-          const msg = e.message || e.toString();
-          if (msg.includes('Rate limit') || msg.includes('LimitExceeded')) {
-            retries--;
-            console.warn(`Rate limit hit, retrying campaign ${camp.id} in 3s...`);
-            await sleep(3000);
-          } else {
-            console.warn(`Could not fetch apps/collabs for campaign ${camp.id}:`, e);
-            break; // Break retry loop on non-rate-limit errors
-          }
-        }
+      const appInfo = userApps[camp.id];
+      if (appInfo) {
+        results.push({
+          ...camp,
+          userStatus: appInfo.status,
+          userCollaboration: appInfo.collaboration || null,
+        });
       }
     }
     userApplications.value = results;

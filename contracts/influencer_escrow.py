@@ -680,6 +680,19 @@ class InfluencerEscrow(gl.Contract):
         return {k.as_hex: v for k, v in self.collaborations[campaign_id].items()}
 
     @gl.public.view
+    def get_user_applications(self, account_address: str) -> dict:
+        addr = _get_address(account_address)
+        results = {}
+        for campaign_id, apps_map in self.applications.items():
+            if addr in apps_map:
+                has_collab = campaign_id in self.collaborations and addr in self.collaborations[campaign_id]
+                results[campaign_id] = {
+                    "status": "collaborating" if has_collab else "applied",
+                    "collaboration": self.collaborations[campaign_id][addr] if has_collab else None
+                }
+        return results
+
+    @gl.public.view
     def get_balance(self, account_address: str) -> str:
         addr = _get_address(account_address)
         if addr not in self.balances:

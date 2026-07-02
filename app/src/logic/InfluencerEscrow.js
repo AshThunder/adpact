@@ -86,6 +86,26 @@ class InfluencerEscrow {
     return collabs;
   }
 
+  async getUserApplications(accountAddress) {
+    const raw = await this.client.readContract({
+      address: this.contractAddress,
+      functionName: "get_user_applications",
+      args: [accountAddress],
+    });
+    // raw is { campaign_id: { status, collaboration } }
+    const results = {};
+    if (raw && typeof raw.entries === "function") {
+      for (const [campId, data] of raw.entries()) {
+        results[campId] = data.entries ? this._mapToObj(data) : data;
+      }
+    } else if (raw && typeof raw === "object") {
+      for (const [campId, data] of Object.entries(raw)) {
+        results[campId] = data.entries ? this._mapToObj(data) : data;
+      }
+    }
+    return results;
+  }
+
   // ─── Write Methods ──────────────────────────────────────────
 
   async createCampaign({

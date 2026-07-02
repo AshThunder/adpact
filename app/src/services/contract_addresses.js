@@ -2,8 +2,8 @@
 // Deployer: 0x25b7a7d21cCf349fbA8245209A25Bbb36fBe4ffD
 
 export const CONTRACT_ADDRESSES = {
-  studionet: '0xbAe744216f6BAb9c8672BE34d06B0BA96Ed319c1',
-  bradbury: '0x1029282576Bd8b65e85A7721642Fffea31A7AD1F',
+  studionet: '0x17CFD6E5203AE5e2747df1880e1153543907C4df',
+  bradbury: '0xeD8F38EdF8aE8Bf95A26108106050f1512852Bac',
   simulator: '', // Set via localStorage or local deploy
 };
 
