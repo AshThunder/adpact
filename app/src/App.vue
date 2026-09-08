@@ -175,11 +175,16 @@
             <!-- Hero Section -->
             <section class="px-xl md:px-2xl py-section max-w-[1440px] mx-auto flex flex-col md:flex-row items-center gap-xxl">
               <div class="flex-1 space-y-lg text-left">
+                <!-- Agent Tank Hackathon Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fin-orange/30 bg-fin-orange/5 text-fin-orange text-body-sm font-medium mb-sm" style="font-size:13px;">
+                  <span class="material-symbols-outlined text-[16px]">emoji_events</span>
+                  GenLayer Agent Tank Hackathon — Agentic Commerce Infrastructure Track
+                </div>
                 <h1 class="font-display-lg text-display-lg text-primary max-w-3xl leading-tight hero-title">
-                  Trustless Influencer Sponsorships. Governed by <span class="text-fin-orange">AI Consensus.</span>
+                  Brand-Creator Contracts. Enforced by <span class="text-fin-orange">On-Chain AI Consensus.</span>
                 </h1>
                 <p class="font-subhead text-body-lg text-ink-subtle max-w-2xl">
-                  The world's first decentralized creator marketplace. No middlemen. No disputes. Automated escrows verified by AI.
+                  AdPact replaces middlemen, agencies, and manual verification with autonomous AI validator nodes. Funds release only when decentralized consensus confirms delivery.
                 </p>
                 <div class="flex flex-wrap items-center gap-md pt-sm">
                   <button 
@@ -230,9 +235,10 @@
             <!-- Workflow Explainer -->
             <section id="how-it-works" class="px-xl md:px-2xl py-section max-w-[1440px] mx-auto scroll-mt-20">
               <div class="text-center mb-xxl">
-                <h2 class="font-display-md text-display-md text-primary mb-md section-title">How it Works</h2>
-                <p class="font-body-lg text-body-lg text-ink-subtle max-w-3xl mx-auto">From campaign creation to payout, everything is handled trustlessly on-chain.</p>
+                <h2 class="font-display-md text-display-md text-primary mb-md section-title">How It Works</h2>
+                <p class="font-body-lg text-body-lg text-ink-subtle max-w-3xl mx-auto">From campaign creation to payout, every step is enforced by on-chain AI consensus.</p>
               </div>
+
               <div class="grid grid-cols-1 md:grid-cols-4 gap-xl text-left">
                 <div class="bg-surface-1 border border-hairline p-xl rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                   <div class="w-14 h-14 bg-surface-container rounded-full flex items-center justify-center mb-lg text-fin-orange">
@@ -363,12 +369,12 @@
             <!-- Dynamic CTA Footer -->
             <section class="bg-surface-1 border-t border-b border-hairline py-section text-center px-xl">
               <div class="max-w-4xl mx-auto space-y-lg">
-                <h2 class="font-display-md text-display-md text-primary" style="font-size: 48px;">Ready to launch your first trustless campaign?</h2>
-                <p class="font-body-lg text-body-lg text-ink-subtle">Join the decentralized marketplace and experience the future of creator sponsorships.</p>
+                <h2 class="font-display-md text-display-md text-primary" style="font-size: 48px;">Ready to launch your first agentic sponsorship?</h2>
+                <p class="font-body-lg text-body-lg text-ink-subtle">Join the decentralized creator marketplace — powered by AI consensus on GenLayer.</p>
                 <div class="pt-md">
                   <button @click="triggerConnect" class="bg-fin-orange text-white px-8 py-4 rounded-full font-button text-body hover:opacity-90 transition-opacity flex items-center justify-center gap-2 mx-auto shadow-md" id="btn-bottom-connect">
                     <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                    Connect MetaMask Wallet
+                    Connect Wallet &amp; Start
                   </button>
                 </div>
               </div>

@@ -4,7 +4,7 @@
     <div class="w-full bg-surface-1 border-b border-hairline py-md md:py-xl">
       <div class="max-w-[1760px] mx-auto w-full px-md md:px-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-sm md:gap-md">
         <div>
-          <span class="font-eyebrow text-body-sm text-ink-subtle uppercase tracking-wider block mb-xs">Influencer Escrow</span>
+          <span class="font-eyebrow text-body-sm text-ink-subtle uppercase tracking-wider block mb-xs">Agentic Commerce</span>
           <h1 class="font-display-md text-display-md text-primary dashboard-title">Creator Marketplace</h1>
         </div>
         <button 
