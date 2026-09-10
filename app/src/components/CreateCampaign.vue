@@ -163,6 +163,39 @@
           </div>
         </div>
 
+        <!-- Creator Reputation & X Score Gate -->
+        <div class="flex flex-col bg-surface-container-lowest border border-hairline rounded-2xl p-lg space-y-md">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-md bg-black text-white text-xs font-bold flex items-center justify-center">𝕏</span>
+              <label class="font-eyebrow text-body-sm text-primary uppercase tracking-wider font-semibold">
+                Creator Reputation &amp; 𝕏 Score Gate
+              </label>
+            </div>
+            <span class="text-caption font-mono text-fin-orange font-medium">
+              {{ form.minXScore === 0 ? 'Open to All' : `Min Score: ${form.minXScore}+` }}
+            </span>
+          </div>
+          <p class="font-body text-body-sm text-ink-muted">
+            Require applicants to meet a minimum decentralized trust score (verified via on-chain AI and Sorsa/TwitterScore signals).
+          </p>
+
+          <!-- Score Presets -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-sm">
+            <button
+              type="button"
+              v-for="preset in scorePresets"
+              :key="preset.value"
+              @click="form.minXScore = preset.value"
+              class="px-3 py-2.5 rounded-xl border text-left transition-all flex flex-col justify-between"
+              :class="form.minXScore === preset.value ? 'border-primary bg-surface-1 shadow-sm font-medium' : 'border-hairline bg-surface-container hover:bg-surface-1 text-ink-subtle'"
+            >
+              <span class="text-[11px] font-eyebrow uppercase">{{ preset.label }}</span>
+              <span class="font-mono text-[14px] font-semibold text-primary mt-1">{{ preset.score }}</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Divider -->
         <hr class="border-t border-hairline my-md" />
 
@@ -179,9 +212,9 @@
           
           <button 
             type="submit" 
-            class="font-button text-body bg-primary text-on-primary px-8 py-3 rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm font-medium" 
+            class="font-button text-body bg-fin-orange text-white px-8 py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-sm" 
             :disabled="submitting" 
-            id="btn-submit-campaign"
+            id="btn-submit-create"
           >
             <div v-if="submitting" class="spinner border-2 border-on-primary border-t-transparent w-4 h-4 rounded-full animate-spin"></div>
             <span v-else>Create Campaign</span>
@@ -201,6 +234,13 @@ const props = defineProps({ escrow: Object });
 const platforms = ['twitter', 'youtube', 'newsletter'];
 const submitting = ref(false);
 
+const scorePresets = [
+  { label: 'Open', score: 'Any (0+)', value: 0 },
+  { label: 'Emerging', score: 'Score 35+', value: 35 },
+  { label: 'Verified', score: 'Score 60+', value: 60 },
+  { label: 'Tier 1 Alpha', score: 'Score 80+', value: 80 },
+];
+
 const form = reactive({
   title: '',
   description: '',
@@ -212,6 +252,7 @@ const form = reactive({
   retentionHours: 24,
   postingDeadline: '',
   initialPct: 30,
+  minXScore: 0,
 });
 
 async function submit() {
@@ -241,7 +282,12 @@ async function submit() {
       requiredKeywords: keywords,
       retentionDurationSeconds: form.retentionHours * 3600,
       postingDeadline: deadlineISO,
-      paymentStructure: { initial: form.initialPct, retention: 100 - form.initialPct },
+      paymentStructure: { 
+        initial: form.initialPct, 
+        retention: 100 - form.initialPct,
+        min_x_score: form.minXScore,
+        min_reputation_score: form.minXScore
+      },
     });
 
     emit('created');

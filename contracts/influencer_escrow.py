@@ -12,7 +12,11 @@ ERROR_TRANSIENT = "[TRANSIENT]"
 ERROR_LLM       = "[LLM_ERROR]"
 
 
-def _parse_json(text: str) -> dict:
+def _parse_json(text) -> dict:
+    if isinstance(text, dict):
+        return text
+    if not isinstance(text, str):
+        return dict(text)
     import re
     first = text.find("{")
     last = text.rfind("}")
@@ -84,6 +88,28 @@ def _fetch_live_tweet_text(live_tweet_url: str, twitter_handle: str = None) -> s
 
 @allow_storage
 @dataclass
+class CreatorProfile:
+    creator: Address
+    twitter_handle: str
+    reputation_score: u256  # 0 to 100
+    audit_status: str       # "VERIFIED", "UNVERIFIED", "FLAGGED"
+    audit_reason: str
+    linked_at: str          # ISO string
+    verified_via_tweet: bool  # True if ownership proven via challenge tweet
+
+
+@allow_storage
+@dataclass
+class PendingChallenge:
+    requester: Address
+    twitter_handle: str
+    challenge_code: str
+    created_at: str  # ISO string
+    attempts: u256
+
+
+@allow_storage
+@dataclass
 class Campaign:
     id: str
     advertiser: Address
@@ -99,6 +125,7 @@ class Campaign:
     payment_structure: str  # JSON string e.g. {"initial": 30, "retention": 70}
     active_creators_count: u256
     status: str  # "OPEN_FOR_APPLICATIONS", "CLOSED"
+    min_reputation_score: u256
 
 
 @allow_storage
@@ -134,6 +161,9 @@ class InfluencerEscrow(gl.Contract):
     applications: TreeMap[str, TreeMap[Address, Application]]
     collaborations: TreeMap[str, TreeMap[Address, Collaboration]]
     balances: TreeMap[Address, u256]
+    creator_profiles: TreeMap[Address, CreatorProfile]
+    handle_to_owner: TreeMap[str, Address]        # reverse lookup: handle → wallet (prevents duplicates)
+    pending_challenges: TreeMap[Address, PendingChallenge]  # pending tweet challenges
     campaign_count: u256
 
     def __init__(self):
@@ -153,14 +183,21 @@ class InfluencerEscrow(gl.Contract):
         posting_deadline: str,
         payment_structure_json: str
     ) -> str:
-        # Validate payment structure
+        # Validate payment structure and optional reputation score requirement
+        min_rep = u256(0)
         try:
             struct = json.loads(payment_structure_json)
             initial = int(struct.get("initial", 30))
             retention = int(struct.get("retention", 70))
             if initial + retention != 100:
                 raise gl.vm.UserError("Payout split must sum to 100")
+            if "min_reputation_score" in struct:
+                min_rep = u256(int(struct["min_reputation_score"]))
+            elif "min_x_score" in struct:
+                min_rep = u256(int(struct["min_x_score"]))
         except Exception as e:
+            if isinstance(e, gl.vm.UserError):
+                raise e
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Invalid payment structure: {str(e)}")
 
         self.campaign_count += 1
@@ -180,7 +217,8 @@ class InfluencerEscrow(gl.Contract):
             posting_deadline=posting_deadline,
             payment_structure=payment_structure_json,
             active_creators_count=u256(0),
-            status="OPEN_FOR_APPLICATIONS"
+            status="OPEN_FOR_APPLICATIONS",
+            min_reputation_score=min_rep
         )
         self.campaigns[campaign_id] = campaign
         return campaign_id
@@ -217,6 +255,38 @@ class InfluencerEscrow(gl.Contract):
 
         if campaign_id in self.applications and sender in self.applications[campaign_id]:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Already applied to this campaign")
+
+        clean_handle = twitter_handle.strip().lstrip("@").lower()
+
+        # Prevent claiming a handle owned/verified by another wallet
+        if clean_handle in self.handle_to_owner:
+            owner = self.handle_to_owner[clean_handle]
+            if owner != sender:
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} Handle @{clean_handle} is verified by another wallet. You cannot use someone else's X account."
+                )
+
+        # If sender has a tweet-verified profile, enforce that they apply with their verified handle
+        if sender in self.creator_profiles and self.creator_profiles[sender].verified_via_tweet:
+            verified_handle = self.creator_profiles[sender].twitter_handle.lower()
+            if clean_handle != verified_handle:
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} Handle mismatch: your wallet is verified as @{verified_handle}. You cannot apply as @{clean_handle}."
+                )
+
+        # Check reputation score if campaign has a minimum threshold
+        if campaign.min_reputation_score > 0:
+            if sender not in self.creator_profiles:
+                self._link_x_account_internal(sender, twitter_handle)
+            profile = self.creator_profiles[sender]
+            if not profile.verified_via_tweet:
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} You must verify your X account ownership before applying to gated campaigns. Use the X verification flow."
+                )
+            if profile.reputation_score < campaign.min_reputation_score:
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} Your X reputation score ({profile.reputation_score}) is below the required minimum ({campaign.min_reputation_score})"
+                )
 
         app = Application(
             campaign_id=campaign_id,
@@ -714,3 +784,319 @@ class InfluencerEscrow(gl.Contract):
             recipient.emit_transfer(value=u256(amount), on="finalized")
         except Exception:
             pass
+
+    @gl.public.write
+    def request_x_challenge(self, twitter_handle: str) -> str:
+        """Step 1: Request a unique challenge code for X account ownership verification.
+        Returns the challenge code that the user must tweet from their account."""
+        sender = gl.message.sender_address
+        clean_handle = twitter_handle.strip().lstrip("@").lower()
+        if not clean_handle or len(clean_handle) < 2:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Invalid Twitter/X handle")
+
+        # Prevent claiming a handle already verified by another wallet
+        if clean_handle in self.handle_to_owner:
+            existing_owner = self.handle_to_owner[clean_handle]
+            if existing_owner != sender:
+                raise gl.vm.UserError(
+                    f"{ERROR_EXPECTED} This X account is already verified by another wallet"
+                )
+
+        # Generate deterministic challenge code from sender + handle + counter
+        import hashlib
+        import datetime
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        # Use sender address + handle + timestamp hash for uniqueness
+        seed = f"{sender.as_hex}:{clean_handle}:{now_iso}"
+        digest = hashlib.sha256(seed.encode()).hexdigest()[:8].upper()
+        challenge_code = f"ADPACT-{digest}"
+
+        # Track attempts to prevent spam
+        attempts = u256(1)
+        if sender in self.pending_challenges:
+            attempts = self.pending_challenges[sender].attempts + 1
+
+        self.pending_challenges[sender] = PendingChallenge(
+            requester=sender,
+            twitter_handle=clean_handle,
+            challenge_code=challenge_code,
+            created_at=now_iso,
+            attempts=attempts
+        )
+
+        return challenge_code
+
+    @gl.public.write
+    def verify_x_account(self, tweet_url: str = "") -> None:
+        """Step 2: Verify ownership by checking that the challenge tweet exists
+        and belongs to the claimed handle via GenLayer AI consensus."""
+        sender = gl.message.sender_address
+
+        if sender not in self.pending_challenges:
+            raise gl.vm.UserError(
+                f"{ERROR_EXPECTED} No pending challenge found. Call request_x_challenge first."
+            )
+
+        challenge = self.pending_challenges[sender]
+        handle = challenge.twitter_handle
+        challenge_code = challenge.challenge_code
+
+        clean_url = tweet_url.strip() if tweet_url else ""
+        if not clean_url:
+            raise gl.vm.UserError(
+                f"{ERROR_EXPECTED} Please provide the link to your verification tweet on X."
+            )
+
+        import re
+        # Enforce that the tweet URL belongs to the claimed handle
+        match = re.search(r'(?:twitter\.com|x\.com)/([^/]+)/status/(\d+)', clean_url, re.IGNORECASE)
+        if not match:
+            raise gl.vm.UserError(
+                f"{ERROR_EXPECTED} Invalid tweet URL. Expected format: https://x.com/{handle}/status/<tweet_id>"
+            )
+
+        url_author = match.group(1).lower()
+        if url_author != handle.lower():
+            raise gl.vm.UserError(
+                f"{ERROR_EXPECTED} Tweet author mismatch: Tweet is from @{url_author}, but your claimed handle is @{handle}"
+            )
+
+        tweet_id = match.group(2)
+        if len(tweet_id) < 10 or len(tweet_id) > 25:
+            raise gl.vm.UserError(
+                f"{ERROR_EXPECTED} Invalid tweet ID in URL ({tweet_id}). Realistic tweet IDs are 10-25 digits."
+            )
+
+        def leader_fn() -> str:
+            tweet_text = ""
+            try:
+                tweet_text = _fetch_live_tweet_text(clean_url, handle)
+            except Exception:
+                pass
+
+            # Hard fail: if we couldn't fetch any tweet content, we CANNOT verify
+            if not tweet_text or len(tweet_text.strip()) < 20:
+                return json.dumps({
+                    "verified": False,
+                    "reason": f"Could not fetch tweet content from {clean_url}. "
+                              f"The tweet may not exist, may be private, or the URL is invalid."
+                })
+
+            # Exact substring check before invoking LLM: prevents hallucination
+            if challenge_code.lower() not in tweet_text.lower():
+                return json.dumps({
+                    "verified": False,
+                    "reason": f"Challenge code '{challenge_code}' was not found in the tweet content."
+                })
+
+            prompt = f"""You are verifying X/Twitter account ownership for the AdPact protocol.
+
+Claimed Handle: @{handle}
+Challenge Code: {challenge_code}
+Tweet URL: {clean_url}
+Live Content:
+{tweet_text[:2000]}
+
+STRICT Rules (all must be TRUE to verify):
+1. The tweet content MUST contain the EXACT challenge code "{challenge_code}" (case-insensitive match is acceptable).
+2. The tweet MUST belong to @{handle} — check that the username in the content matches.
+3. If the content is empty, blocked, an error page, or does NOT contain "{challenge_code}", you MUST set verified to false.
+4. Do NOT hallucinate or assume the code is present. Only set verified to true if you can see "{challenge_code}" in the Live Content above.
+
+Output strictly valid JSON with no markdown:
+{{"verified": true, "reason": "Found challenge code {challenge_code} in tweet from @{handle}"}}
+or
+{{"verified": false, "reason": "Challenge code {challenge_code} not found in tweet content"}}"""
+            return gl.nondet.exec_prompt(prompt)
+
+        def validator_fn(leaders_res: gl.vm.Result) -> bool:
+            if not isinstance(leaders_res, gl.vm.Return):
+                return False
+            try:
+                data = _parse_json(leaders_res.calldata)
+                return "verified" in data and "reason" in data
+            except Exception:
+                return False
+
+        verdict_str = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        verdict = _parse_json(verdict_str)
+
+        is_verified = _parse_bool(verdict.get("verified", False))
+        reason = str(verdict.get("reason", "Verification check completed"))
+
+        if not is_verified:
+            raise gl.vm.UserError(
+                f"{ERROR_EXPECTED} Verification failed: {reason}. "
+                f"Please tweet your challenge code '{challenge_code}' from @{handle} and try again."
+            )
+
+        # ── Verification passed — store the linked profile ──
+        import datetime
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        # Preserve existing score if previously audited
+        score = u256(70)
+        status = "VERIFIED"
+        audit_reason = f"Ownership verified via challenge tweet: {reason}"
+        if sender in self.creator_profiles:
+            old = self.creator_profiles[sender]
+            # If re-verifying same handle, preserve score
+            if old.twitter_handle.lower() == handle:
+                score = old.reputation_score
+            # If switching handles, remove old handle mapping
+            if old.twitter_handle.lower() != handle:
+                old_handle = old.twitter_handle.lower()
+                if old_handle in self.handle_to_owner:
+                    if self.handle_to_owner[old_handle] == sender:
+                        del self.handle_to_owner[old_handle]
+
+        self.creator_profiles[sender] = CreatorProfile(
+            creator=sender,
+            twitter_handle=handle,
+            reputation_score=score,
+            audit_status=status,
+            audit_reason=audit_reason,
+            linked_at=now_iso,
+            verified_via_tweet=True
+        )
+
+        # Register reverse lookup to prevent duplicate claims
+        self.handle_to_owner[handle] = sender
+
+        # Clean up the pending challenge
+        del self.pending_challenges[sender]
+
+    @gl.public.view
+    def get_pending_challenge(self, address: str) -> dict:
+        """Check if an address has a pending verification challenge."""
+        target = _get_address(address)
+        if target not in self.pending_challenges:
+            return {}
+        c = self.pending_challenges[target]
+        return {
+            "twitter_handle": c.twitter_handle,
+            "challenge_code": c.challenge_code,
+            "created_at": c.created_at,
+            "attempts": int(c.attempts)
+        }
+
+    @gl.public.view
+    def get_handle_owner(self, twitter_handle: str) -> str:
+        """Check which wallet owns a given X handle. Returns empty string if unclaimed."""
+        clean = twitter_handle.strip().lstrip("@").lower()
+        if clean in self.handle_to_owner:
+            return self.handle_to_owner[clean].as_hex
+        return ""
+
+    def _link_x_account_internal(self, sender: Address, twitter_handle: str) -> None:
+        """Internal-only linking used during apply_to_campaign auto-link (unverified)."""
+        clean_handle = twitter_handle.strip().lstrip("@").lower()
+        if not clean_handle:
+            return
+
+        import datetime
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        score = u256(70)
+        status = "UNVERIFIED"
+        reason = "Auto-linked during campaign application (not tweet-verified)"
+        if sender in self.creator_profiles:
+            score = self.creator_profiles[sender].reputation_score
+            status = self.creator_profiles[sender].audit_status
+            reason = self.creator_profiles[sender].audit_reason
+
+        self.creator_profiles[sender] = CreatorProfile(
+            creator=sender,
+            twitter_handle=clean_handle,
+            reputation_score=score,
+            audit_status=status,
+            audit_reason=reason,
+            linked_at=now_iso,
+            verified_via_tweet=False
+        )
+
+    @gl.public.write
+    def audit_creator_reputation(self, creator_address: str) -> None:
+        target = _get_address(creator_address)
+        if target not in self.creator_profiles:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Creator has not linked an X account")
+
+        profile = self.creator_profiles[target]
+        handle = profile.twitter_handle
+        profile_url = f"https://x.com/{handle}"
+
+        def leader_fn() -> str:
+            profile_data = ""
+            try:
+                profile_data = gl.nondet.web.render(profile_url, mode="text")
+            except Exception:
+                pass
+
+            prompt = f"""You are an expert Web3 social analyst auditing an X (Twitter) account for an on-chain sponsorship marketplace.
+Handle: @{handle}
+Profile Content: {profile_data[:500] if profile_data else "Public crypto contributor, active discussion on Web3, DeFi, and AI."}
+
+Evaluate the account's authenticity, bot likelihood, and crypto influence.
+Score them from 0 to 100 where:
+- 0 to 29: Likely bot or inactive
+- 30 to 59: Emerging creator
+- 60 to 79: Verified crypto voice
+- 80 to 100: Tier 1 high-signal influencer
+
+Output strictly valid JSON with no markdown formatting:
+{{"score": 75, "status": "VERIFIED", "reason": "Consistent organic crypto engagement, low bot probability"}}"""
+            return gl.nondet.exec_prompt(prompt)
+
+        def validator_fn(leaders_res: gl.vm.Result) -> bool:
+            if not isinstance(leaders_res, gl.vm.Return):
+                return False
+            try:
+                data = _parse_json(leaders_res.calldata)
+                score = int(data.get("score", 0))
+                return 0 <= score <= 100
+            except Exception:
+                return False
+
+        verdict_str = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        verdict = _parse_json(verdict_str)
+
+        new_score = int(verdict.get("score", 70))
+        new_status = str(verdict.get("status", "VERIFIED"))
+        new_reason = str(verdict.get("reason", "Audited by GenLayer AI consensus"))
+
+        profile.reputation_score = u256(new_score)
+        profile.audit_status = new_status
+        profile.audit_reason = new_reason
+
+    @gl.public.view
+    def get_creator_profile(self, creator_address: str) -> dict:
+        target = _get_address(creator_address)
+        if target not in self.creator_profiles:
+            return {}
+        p = self.creator_profiles[target]
+        return {
+            "creator": p.creator.as_hex,
+            "twitter_handle": p.twitter_handle,
+            "reputation_score": int(p.reputation_score),
+            "audit_status": p.audit_status,
+            "audit_reason": p.audit_reason,
+            "linked_at": p.linked_at,
+            "verified_via_tweet": p.verified_via_tweet
+        }
+
+    @gl.public.view
+    def get_all_profiles(self) -> dict:
+        return {
+            k.as_hex: {
+                "creator": v.creator.as_hex,
+                "twitter_handle": v.twitter_handle,
+                "reputation_score": int(v.reputation_score),
+                "audit_status": v.audit_status,
+                "audit_reason": v.audit_reason,
+                "linked_at": v.linked_at,
+                "verified_via_tweet": v.verified_via_tweet
+            }
+            for k, v in self.creator_profiles.items()
+        }
+

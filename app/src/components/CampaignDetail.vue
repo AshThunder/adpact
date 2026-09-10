@@ -91,6 +91,7 @@
               <thead>
                 <tr class="bg-surface-container-lowest border-b border-hairline">
                   <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md">Creator</th>
+                  <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md">𝕏 Reputation &amp; Signals</th>
                   <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md hidden sm:table-cell">Wallet</th>
                   <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md">Proposal Snippet</th>
                   <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md text-right">Action</th>
@@ -98,7 +99,7 @@
               </thead>
               <tbody class="font-body text-body-sm divide-y divide-hairline">
                 <tr v-if="applications.filter(a => a.status === 'PENDING').length === 0">
-                  <td colspan="4" class="p-lg text-center text-ink-subtle font-body text-body-sm bg-surface-bright">
+                  <td colspan="5" class="p-lg text-center text-ink-subtle font-body text-body-sm bg-surface-bright">
                     No applications received yet.
                   </td>
                 </tr>
@@ -113,6 +114,37 @@
                         {{ app.twitter_handle ? app.twitter_handle[0].toUpperCase() : 'C' }}
                       </div>
                       <span class="font-medium text-primary">@{{ app.twitter_handle }}</span>
+                    </div>
+                  </td>
+                  <td class="p-md">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-mono text-mono font-bold" :style="{ color: getScoreTier(getApplicantScore(app)).color }">
+                          {{ getApplicantScore(app) }}
+                        </span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full border font-medium uppercase" :class="getScoreTier(getApplicantScore(app)).badgeClass">
+                          {{ getScoreTier(getApplicantScore(app)).label }}
+                        </span>
+                        <span 
+                          v-if="campaignMinScore > 0"
+                          class="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                          :class="getApplicantScore(app) >= campaignMinScore ? 'text-report-green bg-report-green/10' : 'text-error bg-error/10'"
+                        >
+                          {{ getApplicantScore(app) >= campaignMinScore ? 'Meets Gate' : 'Below Gate' }}
+                        </span>
+                      </div>
+                      <!-- 1-Click Verification Links -->
+                      <div class="flex items-center gap-2 text-[11px] font-mono text-ink-subtle">
+                        <a :href="getSorsaUrl(app.twitter_handle)" target="_blank" class="hover:text-fin-orange inline-flex items-center gap-0.5 transition-colors">
+                          <span>Sorsa</span>
+                          <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+                        </a>
+                        <span>·</span>
+                        <a :href="getTwitterScoreUrl(app.twitter_handle)" target="_blank" class="hover:text-brand-blue inline-flex items-center gap-0.5 transition-colors">
+                          <span>TwitterScore</span>
+                          <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+                        </a>
+                      </div>
                     </div>
                   </td>
                   <td class="p-md font-mono text-mono text-ink-subtle hidden sm:table-cell">
@@ -595,7 +627,44 @@
             </div>
           </div>
           <div v-else>
-            <h2 class="font-headline text-headline text-primary tracking-tight mb-md">Apply to Campaign</h2>
+            <div class="flex items-center justify-between mb-md">
+              <h2 class="font-headline text-headline text-primary tracking-tight">Apply to Campaign</h2>
+              <!-- Linked X Account Badge -->
+              <div v-if="userXProfile.isLinked" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black text-white text-[12px] font-mono border border-white/10 shadow-sm">
+                <span>𝕏 @{{ userXProfile.handle }}</span>
+                <span class="text-fin-orange font-bold">({{ userXProfile.score }})</span>
+              </div>
+            </div>
+
+            <!-- Reputation Alert Banner if Campaign has a gate -->
+            <div v-if="campaignMinScore > 0" class="mb-md p-md rounded-xl border flex items-center justify-between" :class="userMeetsGate ? 'bg-report-green/5 border-report-green/20 text-report-green' : 'bg-amber-500/5 border-amber-500/20 text-amber-600'">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">{{ userMeetsGate ? 'verified' : 'warning' }}</span>
+                <span class="text-body-sm font-body">
+                  Campaign Gate: <strong>{{ campaignMinScore }}+ 𝕏 Trust Score</strong>
+                  <span v-if="userXProfile.isLinked"> (Your score: <strong>{{ userXProfile.score }}</strong>)</span>
+                </span>
+              </div>
+              <span class="font-mono text-xs font-bold uppercase tracking-wider">
+                {{ userMeetsGate ? 'Qualified ✓' : 'Threshold Alert' }}
+              </span>
+            </div>
+
+            <!-- Connect X CTA if not linked -->
+            <div v-if="!userXProfile.isLinked" class="mb-md p-md rounded-xl bg-surface-container border border-hairline flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-base">𝕏</span>
+                <span class="text-body-sm font-body text-ink-subtle">Connect your X account to auto-verify your reputation score.</span>
+              </div>
+              <button
+                type="button"
+                @click="$emit('open-x-modal')"
+                class="bg-primary text-on-primary px-3 py-1.5 rounded-lg text-body-sm font-button hover:opacity-90 transition-opacity"
+              >
+                Connect 𝕏
+              </button>
+            </div>
+
             <form @submit.prevent="apply" class="flex flex-col gap-md">
               <div class="flex flex-col gap-xxs">
                 <label class="font-eyebrow text-eyebrow text-primary" for="apply-handle">Twitter Handle</label>
@@ -752,8 +821,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { CheckCircle, XCircle } from 'lucide-vue-next';
+import {
+  userXProfile,
+  getScoreTier,
+  getSorsaUrl,
+  getTwitterScoreUrl,
+  calculateBaselineScore,
+  saveLocalXProfile,
+} from '../services/reputation.js';
 
 const props = defineProps({
   campaign: Object,
@@ -761,21 +838,54 @@ const props = defineProps({
   escrow: Object
 });
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits(['refresh', 'open-x-modal']);
 
 const applications = ref([]);
 const collaborations = ref([]);
 const actioning = ref(false);
 
 const applyForm = reactive({
-  twitterHandle: '',
+  twitterHandle: userXProfile.handle || '',
   proposalMessage: ''
 });
+
+// Auto-fill twitterHandle when userXProfile loads
+watch(
+  () => userXProfile.handle,
+  (h) => {
+    if (h && !applyForm.twitterHandle) {
+      applyForm.twitterHandle = h;
+    }
+  },
+  { immediate: true }
+);
 
 const creatorDraft = ref('');
 const creatorLiveUrl = ref('');
 
 // Computed fields
+const campaignMinScore = computed(() => {
+  if (!props.campaign) return 0;
+  if (props.campaign.min_reputation_score) return Number(props.campaign.min_reputation_score);
+  try {
+    const struct = JSON.parse(props.campaign.payment_structure || '{}');
+    return Number(struct.min_x_score || struct.min_reputation_score || 0);
+  } catch (e) {
+    return 0;
+  }
+});
+
+const userMeetsGate = computed(() => {
+  if (campaignMinScore.value === 0) return true;
+  if (!userXProfile.isLinked) return false;
+  return userXProfile.score >= campaignMinScore.value;
+});
+
+function getApplicantScore(app) {
+  if (app && app.reputation_score) return Number(app.reputation_score);
+  return calculateBaselineScore(app.twitter_handle || app.creator);
+}
+
 const isAdvertiser = computed(() => {
   if (!props.account) return false;
   return props.campaign.advertiser.toLowerCase() === props.account.address.toLowerCase();

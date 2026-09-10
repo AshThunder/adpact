@@ -275,6 +275,116 @@ class InfluencerEscrow {
     return this._waitFinalized(txHash);
   }
 
+  // ─── X Profile & Reputation Methods ────────────────────────
+
+  async getCreatorProfile(creatorAddress) {
+    try {
+      const raw = await this.client.readContract({
+        address: this.contractAddress,
+        functionName: "get_creator_profile",
+        args: [creatorAddress],
+      });
+      return raw && (typeof raw === "object" || typeof raw.entries === "function")
+        ? this._mapToObj(raw)
+        : null;
+    } catch (e) {
+      console.warn("getCreatorProfile error:", e);
+      return null;
+    }
+  }
+
+  async getAllProfiles() {
+    try {
+      const raw = await this.client.readContract({
+        address: this.contractAddress,
+        functionName: "get_all_profiles",
+        args: [],
+      });
+      const profiles = {};
+      if (raw && typeof raw.entries === "function") {
+        for (const [addr, data] of raw.entries()) {
+          profiles[addr.toLowerCase()] = this._mapToObj(data);
+        }
+      } else if (raw && typeof raw === "object") {
+        for (const [addr, data] of Object.entries(raw)) {
+          profiles[addr.toLowerCase()] = data.entries ? this._mapToObj(data) : data;
+        }
+      }
+      return profiles;
+    } catch (e) {
+      console.warn("getAllProfiles error:", e);
+      return {};
+    }
+  }
+
+  async requestXChallenge(twitterHandle, onTxHash = null) {
+    const activeClient = await syncSnapConnection();
+
+    const txHash = await activeClient.writeContract({
+      address: this.contractAddress,
+      functionName: "request_x_challenge",
+      args: [twitterHandle],
+    });
+    if (onTxHash) onTxHash(txHash);
+    return this._waitFinalized(txHash);
+  }
+
+  async verifyXAccount(tweetUrl = "", onTxHash = null) {
+    const activeClient = await syncSnapConnection();
+
+    const txHash = await activeClient.writeContract({
+      address: this.contractAddress,
+      functionName: "verify_x_account",
+      args: [tweetUrl],
+    });
+    if (onTxHash) onTxHash(txHash);
+    return this._waitFinalized(txHash);
+  }
+
+  async getPendingChallenge(address) {
+    try {
+      const result = await this.client.readContract({
+        account: this.account,
+        address: this.contractAddress,
+        functionName: "get_pending_challenge",
+        args: [address],
+      });
+      return result && (typeof result === "object" || typeof result.entries === "function")
+        ? this._mapToObj(result)
+        : {};
+    } catch (e) {
+      console.warn("getPendingChallenge error:", e);
+      return {};
+    }
+  }
+
+  async getHandleOwner(twitterHandle) {
+    try {
+      const result = await this.client.readContract({
+        account: this.account,
+        address: this.contractAddress,
+        functionName: "get_handle_owner",
+        args: [twitterHandle],
+      });
+      return result || "";
+    } catch (e) {
+      console.warn("getHandleOwner error:", e);
+      return "";
+    }
+  }
+
+  async auditCreatorReputation(creatorAddress, onTxHash = null) {
+    const activeClient = await syncSnapConnection();
+
+    const txHash = await activeClient.writeContract({
+      address: this.contractAddress,
+      functionName: "audit_creator_reputation",
+      args: [creatorAddress],
+    });
+    if (onTxHash) onTxHash(txHash);
+    return this._waitFinalized(txHash);
+  }
+
   // ─── Helpers ────────────────────────────────────────────────
 
   async _waitFinalized(txHash, retries = 60) {

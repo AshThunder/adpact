@@ -65,10 +65,37 @@
           </div>
 
           <!-- Balance Display -->
-          <div v-if="wagmiState.isConnected" class="balance-display" id="balance-display">
+          <div v-if="wagmiState.isConnected" class="balance-display hidden sm:flex" id="balance-display">
             <span class="font-mono text-mono text-ink-subtle">
               {{ wagmiState.balance ? parseFloat(wagmiState.balance.formatted).toFixed(2) : '0.00' }} GEN
             </span>
+          </div>
+
+          <!-- X (Twitter) Connect Pill -->
+          <div v-if="wagmiState.isConnected" class="flex items-center">
+            <button
+              v-if="!userXProfile.isLinked"
+              @click="showXConnectModal = true"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-hairline bg-surface-1 hover:bg-surface-container text-body-sm font-button text-primary transition-all shadow-sm cursor-pointer"
+              id="btn-nav-connect-x"
+              title="Connect 𝕏 Account"
+            >
+              <span class="font-bold text-sm">𝕏</span>
+              <span class="hidden md:inline">Connect 𝕏</span>
+            </button>
+            <button
+              v-else
+              @click="showXConnectModal = true"
+              class="flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/10 bg-black text-white text-body-sm font-mono hover:opacity-90 transition-all shadow-sm cursor-pointer"
+              id="btn-nav-x-profile"
+              title="View 𝕏 Creator Profile & Score"
+            >
+              <span class="font-bold text-sm">𝕏</span>
+              <span class="max-w-[90px] truncate">@{{ userXProfile.handle }}</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-fin-orange text-white text-[10px] font-bold">
+                {{ userXProfile.score }}
+              </span>
+            </button>
           </div>
 
           <WalletConnect />
@@ -175,16 +202,11 @@
             <!-- Hero Section -->
             <section class="px-xl md:px-2xl py-section max-w-[1440px] mx-auto flex flex-col md:flex-row items-center gap-xxl">
               <div class="flex-1 space-y-lg text-left">
-                <!-- Agent Tank Hackathon Badge -->
-                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fin-orange/30 bg-fin-orange/5 text-fin-orange text-body-sm font-medium mb-sm" style="font-size:13px;">
-                  <span class="material-symbols-outlined text-[16px]">emoji_events</span>
-                  GenLayer Agent Tank Hackathon — Agentic Commerce Infrastructure Track
-                </div>
                 <h1 class="font-display-lg text-display-lg text-primary max-w-3xl leading-tight hero-title">
-                  Brand-Creator Contracts. Enforced by <span class="text-fin-orange">On-Chain AI Consensus.</span>
+                  Trustless Influencer Sponsorships. Governed by <span class="text-fin-orange">AI Consensus.</span>
                 </h1>
                 <p class="font-subhead text-body-lg text-ink-subtle max-w-2xl">
-                  AdPact replaces middlemen, agencies, and manual verification with autonomous AI validator nodes. Funds release only when decentralized consensus confirms delivery.
+                  The world's first decentralized creator marketplace. No middlemen. No disputes. Automated escrows verified by AI.
                 </p>
                 <div class="flex flex-wrap items-center gap-md pt-sm">
                   <button 
@@ -235,10 +257,9 @@
             <!-- Workflow Explainer -->
             <section id="how-it-works" class="px-xl md:px-2xl py-section max-w-[1440px] mx-auto scroll-mt-20">
               <div class="text-center mb-xxl">
-                <h2 class="font-display-md text-display-md text-primary mb-md section-title">How It Works</h2>
-                <p class="font-body-lg text-body-lg text-ink-subtle max-w-3xl mx-auto">From campaign creation to payout, every step is enforced by on-chain AI consensus.</p>
+                <h2 class="font-display-md text-display-md text-primary mb-md section-title">How it Works</h2>
+                <p class="font-body-lg text-body-lg text-ink-subtle max-w-3xl mx-auto">From campaign creation to payout, everything is handled trustlessly on-chain.</p>
               </div>
-
               <div class="grid grid-cols-1 md:grid-cols-4 gap-xl text-left">
                 <div class="bg-surface-1 border border-hairline p-xl rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                   <div class="w-14 h-14 bg-surface-container rounded-full flex items-center justify-center mb-lg text-fin-orange">
@@ -369,12 +390,12 @@
             <!-- Dynamic CTA Footer -->
             <section class="bg-surface-1 border-t border-b border-hairline py-section text-center px-xl">
               <div class="max-w-4xl mx-auto space-y-lg">
-                <h2 class="font-display-md text-display-md text-primary" style="font-size: 48px;">Ready to launch your first agentic sponsorship?</h2>
-                <p class="font-body-lg text-body-lg text-ink-subtle">Join the decentralized creator marketplace — powered by AI consensus on GenLayer.</p>
+                <h2 class="font-display-md text-display-md text-primary" style="font-size: 48px;">Ready to launch your first trustless campaign?</h2>
+                <p class="font-body-lg text-body-lg text-ink-subtle">Join the decentralized marketplace and experience the future of creator sponsorships.</p>
                 <div class="pt-md">
                   <button @click="triggerConnect" class="bg-fin-orange text-white px-8 py-4 rounded-full font-button text-body hover:opacity-90 transition-opacity flex items-center justify-center gap-2 mx-auto shadow-md" id="btn-bottom-connect">
                     <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                    Connect Wallet &amp; Start
+                    Connect MetaMask Wallet
                   </button>
                 </div>
               </div>
@@ -437,6 +458,13 @@
         </div>
       </div>
     </footer>
+
+    <!-- X Connect Modal -->
+    <XConnectModal
+      v-if="showXConnectModal"
+      :escrow="escrowInstance"
+      @close="showXConnectModal = false"
+    />
   </div>
 </template>
 
@@ -445,8 +473,19 @@ import { ref, computed, watch } from 'vue';
 import { Wallet, Globe, AlertTriangle, CheckCircle, Loader, XCircle } from 'lucide-vue-next';
 import WalletConnect from './components/WalletConnect.vue';
 import Dashboard from './components/Dashboard.vue';
+import XConnectModal from './components/XConnectModal.vue';
+import { userXProfile } from './services/reputation.js';
+import InfluencerEscrow from './logic/InfluencerEscrow.js';
+import { getContractAddress } from './services/contract_addresses.js';
 import { wagmiState, connectWallet } from './services/wagmi.js';
 import { selectedNetwork, setNetwork, syncSnapConnection } from './services/genlayer.js';
+
+const showXConnectModal = ref(false);
+
+const escrowInstance = computed(() => {
+  const addr = getContractAddress(selectedNetwork.value);
+  return new InfluencerEscrow(addr, wagmiState.address);
+});
 
 // Computed account object expected by dashboard & details
 const wagmiAccount = computed(() => {

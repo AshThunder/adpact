@@ -4,17 +4,38 @@
     <div class="w-full bg-surface-1 border-b border-hairline py-md md:py-xl">
       <div class="max-w-[1760px] mx-auto w-full px-md md:px-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-sm md:gap-md">
         <div>
-          <span class="font-eyebrow text-body-sm text-ink-subtle uppercase tracking-wider block mb-xs">Agentic Commerce</span>
+          <span class="font-eyebrow text-body-sm text-ink-subtle uppercase tracking-wider block mb-xs">Influencer Escrow</span>
           <h1 class="font-display-md text-display-md text-primary dashboard-title">Creator Marketplace</h1>
         </div>
-        <button 
-          class="font-button text-body bg-primary text-on-primary px-8 py-4 rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity font-medium shadow-sm"
-          @click="showCreateModal = true"
-          id="btn-create-campaign-hero"
-        >
-          <span class="material-symbols-outlined text-[20px]">add</span>
-          Create Campaign
-        </button>
+        <div class="flex items-center gap-sm">
+          <!-- X Account Link Pill in Dashboard -->
+          <button 
+            @click="showXModal = true"
+            class="flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all text-body-sm shadow-sm cursor-pointer"
+            :class="userXProfile.isLinked ? 'bg-black text-white border-white/10 hover:opacity-90' : 'bg-surface-1 border-hairline hover:bg-surface-container text-primary'"
+            id="btn-dashboard-x-profile"
+            title="Connect / View 𝕏 Creator Profile"
+          >
+            <span class="font-bold text-sm">𝕏</span>
+            <span v-if="userXProfile.isLinked" class="font-mono font-medium">@{{ userXProfile.handle }}</span>
+            <span v-else class="font-button font-medium">Link 𝕏 Account</span>
+            <span 
+              v-if="userXProfile.isLinked" 
+              class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-fin-orange text-white"
+            >
+              {{ userXProfile.score }}
+            </span>
+          </button>
+
+          <button 
+            class="font-button text-body bg-fin-orange text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm font-medium"
+            @click="showCreateModal = true"
+            id="btn-open-create-modal"
+          >
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Create Campaign
+          </button>
+        </div>
       </div>
     </div>
 
@@ -132,6 +153,7 @@
             :escrow="escrow" 
             @refresh="fetchData"
             @back="selectedCampaign = null"
+            @open-x-modal="showXModal = true"
           />
         </div>
 
@@ -459,12 +481,23 @@
               :id="`campaign-card-${camp.id}`"
             >
               <div class="flex items-start justify-between mb-sm md:mb-lg">
-                <span class="bg-surface-container px-3 py-1.5 md:px-4 md:py-2 rounded-full font-button text-caption text-primary flex items-center gap-1.5 border border-hairline">
-                  <span class="material-symbols-outlined text-[16px]">
-                    {{ camp.platform && camp.platform.toLowerCase() === 'youtube' ? 'play_circle' : (camp.platform && camp.platform.toLowerCase() === 'newsletter' ? 'history_edu' : 'tag') }}
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="bg-surface-container px-3 py-1.5 md:px-4 md:py-2 rounded-full font-button text-caption text-primary flex items-center gap-1.5 border border-hairline">
+                    <span class="material-symbols-outlined text-[16px]">
+                      {{ camp.platform && camp.platform.toLowerCase() === 'youtube' ? 'play_circle' : (camp.platform && camp.platform.toLowerCase() === 'newsletter' ? 'history_edu' : 'tag') }}
+                    </span>
+                    {{ camp.platform ? camp.platform.toUpperCase() : 'Twitter' }}
                   </span>
-                  {{ camp.platform ? camp.platform.toUpperCase() : 'Twitter' }}
-                </span>
+                  <!-- 𝕏 Reputation Gate Badge -->
+                  <span 
+                    v-if="getCampaignGate(camp) > 0" 
+                    class="bg-fin-orange/10 border border-fin-orange/20 text-fin-orange px-2.5 py-1 rounded-full font-mono text-[11px] font-bold inline-flex items-center gap-1"
+                    title="Minimum X Trust Score required"
+                  >
+                    <span>𝕏 Gate:</span>
+                    <span>{{ getCampaignGate(camp) }}+</span>
+                  </span>
+                </div>
                 
                 <span 
                   v-if="camp.posting_deadline && new Date() > new Date(camp.posting_deadline)" 
@@ -516,6 +549,13 @@
       @close="showCreateModal = false" 
       @created="fetchData" 
     />
+
+    <!-- X Connect Modal -->
+    <XConnectModal 
+      v-if="showXModal" 
+      :escrow="escrow" 
+      @close="showXModal = false" 
+    />
   </div>
 </template>
 
@@ -525,6 +565,8 @@ import { Plus, Grid, FolderOpen, ArrowLeft } from 'lucide-vue-next';
 import InfluencerEscrow from '../logic/InfluencerEscrow.js';
 import CreateCampaign from './CreateCampaign.vue';
 import CampaignDetail from './CampaignDetail.vue';
+import XConnectModal from './XConnectModal.vue';
+import { userXProfile } from '../services/reputation.js';
 import { selectedNetwork } from '../services/genlayer.js';
 import { getContractAddress } from '../services/contract_addresses.js';
 
@@ -543,9 +585,21 @@ const campaigns = ref([]);
 const loading = ref(false);
 const loadingApplications = ref(false);
 const showCreateModal = ref(false);
+const showXModal = ref(false);
 const selectedCampaign = ref(null);
 const userApplications = ref([]);
 const selectedTab = ref(props.activeTab);
+
+function getCampaignGate(camp) {
+  if (!camp) return 0;
+  if (camp.min_reputation_score) return Number(camp.min_reputation_score);
+  try {
+    const struct = JSON.parse(camp.payment_structure || '{}');
+    return Number(struct.min_x_score || struct.min_reputation_score || 0);
+  } catch (e) {
+    return 0;
+  }
+}
 
 const userBalanceRaw = ref("0");
 const withdrawing = ref(false);
