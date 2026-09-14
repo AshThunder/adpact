@@ -276,11 +276,11 @@ async function submit() {
       title: form.title,
       description: form.description,
       attoBudgetPerCreator: attoBudget,
-      maxCreators: form.maxCreators,
+      maxCreators: BigInt(form.maxCreators || 1),
       platform: form.platform,
       requiredHashtags: hashtags,
       requiredKeywords: keywords,
-      retentionDurationSeconds: form.retentionHours * 3600,
+      retentionDurationSeconds: BigInt((form.retentionHours || 24) * 3600),
       postingDeadline: deadlineISO,
       paymentStructure: { 
         initial: form.initialPct, 
