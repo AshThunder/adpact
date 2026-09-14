@@ -5,6 +5,20 @@ import { createClient } from 'genlayer-js';
 import { studionet as glStudioNet, testnetBradbury as glBradbury, localnet as glLocalnet } from 'genlayer-js/chains';
 
 // ── Custom GenLayer Chains for Wagmi ──────────────────────
+export const studionext = {
+  id: 61997,
+  name: 'GenLayer Studio Next',
+  nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://studio-next.genlayer.com/api'] },
+    public: { http: ['https://studio-next.genlayer.com/api'] },
+  },
+  blockExplorers: {
+    default: { name: 'GenLayer Explorer', url: 'https://explorer-studio-dev.genlayer.com' }
+  },
+  testnet: true,
+};
+
 export const bradbury = {
   id: 4221,
   name: 'GenLayer Bradbury Testnet',
@@ -46,9 +60,10 @@ export const simulator = {
 
 // ── Config Wagmi ──────────────────────────────────────────
 export const config = createConfig({
-  chains: [bradbury, studionet, simulator],
+  chains: [studionext, studionet, bradbury, simulator],
   connectors: [injected()],
   transports: {
+    [studionext.id]: http(),
     [bradbury.id]: http(),
     [studionet.id]: http(),
     [simulator.id]: http(),
@@ -73,7 +88,10 @@ async function fetchBalance() {
     let rpcUrl = 'https://studio.genlayer.com/api';
 
     // Map chainId.value to correct GenLayer network configurations
-    if (chainId.value === 4221 || chainId.value === 61997) {
+    if (chainId.value === 61997) {
+      chainObj = studionext;
+      rpcUrl = 'https://studio-next.genlayer.com/api';
+    } else if (chainId.value === 4221) {
       chainObj = glBradbury;
       rpcUrl = 'https://rpc-bradbury.genlayer.com';
     } else if (chainId.value === 61999) {

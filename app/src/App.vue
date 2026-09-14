@@ -59,6 +59,7 @@
               class="network-select"
               id="select-network"
             >
+              <option value="studionext">Studio Next</option>
               <option value="studionet">StudioNet</option>
               <option value="bradbury">Bradbury</option>
             </select>
@@ -173,10 +174,18 @@
       <div class="container warning-banner-content">
         <span style="display:flex; align-items:center; gap:var(--space-xs); font-weight: 500;">
           <AlertTriangle :size="16" style="color:var(--color-brand-orange);" />
-          Your {{ selectedNetwork === 'bradbury' ? 'Bradbury Testnet' : 'StudioNet' }} balance is 0 GEN. You need GEN tokens to fund escrows or submit verifications.
+          Your {{ selectedNetwork === 'studionext' ? 'Studio Next' : (selectedNetwork === 'bradbury' ? 'Bradbury Testnet' : 'StudioNet') }} balance is 0 GEN. You need GEN tokens to fund escrows or submit verifications.
         </span>
         <a 
-          v-if="selectedNetwork === 'bradbury'"
+          v-if="selectedNetwork === 'studionext'"
+          href="https://studio-next.genlayer.com" 
+          target="_blank" 
+          class="btn btn-accent btn-sm text-decoration-none"
+        >
+          Claim Studio Next Tokens
+        </a>
+        <a 
+          v-else-if="selectedNetwork === 'bradbury'"
           href="https://testnet-faucet.genlayer.foundation/" 
           target="_blank" 
           class="btn btn-accent btn-sm text-decoration-none"
@@ -557,7 +566,9 @@ window.marketplaceToast = {
 
 // Dynamic explorer URL based on selected network
 const explorerUrl = computed(() => {
-  if (selectedNetwork.value === 'bradbury') {
+  if (selectedNetwork.value === 'studionext') {
+    return 'https://explorer-studio-dev.genlayer.com';
+  } else if (selectedNetwork.value === 'bradbury') {
     return 'https://explorer-bradbury.genlayer.com';
   } else if (selectedNetwork.value === 'studionet') {
     return 'https://explorer-studio.genlayer.com';

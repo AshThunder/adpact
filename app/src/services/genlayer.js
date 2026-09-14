@@ -6,6 +6,25 @@ import { switchChain } from "@wagmi/core";
 
 // ── Network Definitions ──────────────────────────────────
 export const NETWORKS = {
+  studionext: {
+    key: 'studionext',
+    name: 'Studio Next',
+    chain: {
+      id: 61997,
+      name: 'GenLayer Studio Next',
+      nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
+      rpcUrls: {
+        default: { http: ['https://studio-next.genlayer.com/api'] },
+        public: { http: ['https://studio-next.genlayer.com/api'] },
+      },
+      blockExplorers: {
+        default: { name: 'GenLayer Explorer', url: 'https://explorer-studio-dev.genlayer.com' }
+      }
+    },
+    rpcUrl: 'https://studio-next.genlayer.com/api',
+    chainId: 61997,
+    wagmiId: 61997,
+  },
   studionet: {
     key: 'studionet',
     name: 'StudioNet',
@@ -33,8 +52,8 @@ export const NETWORKS = {
 };
 
 // ── Reactive Active Network ──────────────────────────────
-let savedNetwork = localStorage.getItem("selectedNetwork") || "studionet";
-if (savedNetwork === "simulator") savedNetwork = "studionet";
+let savedNetwork = localStorage.getItem("selectedNetwork") || "studionext";
+if (savedNetwork === "simulator") savedNetwork = "studionext";
 export const selectedNetwork = ref(savedNetwork);
 
 export function setNetwork(networkKey) {
