@@ -138,6 +138,7 @@ class InfluencerEscrow {
         postingDeadline,
         JSON.stringify(paymentStructure),
       ],
+      value: 0n,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
