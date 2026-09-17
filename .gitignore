@@ -69,3 +69,8 @@ app/scratch/
 scratch/
 artifacts/
 .tempmediaStorage/
+demo_assets/
+scratch_demo_*.png
+test_audio.mp3
+test_screencast.mp4
+test_shot_*.jpg

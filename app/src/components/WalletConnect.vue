@@ -45,7 +45,8 @@
 <script setup>
 import { computed } from 'vue';
 import { LogOut } from 'lucide-vue-next';
-import { wagmiState, connectWallet, disconnectWallet } from '../services/wagmi.js';
+import { wagmiState, connectWallet, disconnectWallet, refreshBalance } from '../services/wagmi.js';
+import { selectedNetwork, syncSnapConnection } from '../services/genlayer.js';
 
 const truncatedAddress = computed(() => {
   if (!wagmiState.address) return '';
@@ -55,6 +56,12 @@ const truncatedAddress = computed(() => {
 async function handleConnect() {
   try {
     await connectWallet();
+    try {
+      await syncSnapConnection();
+    } catch (snapErr) {
+      console.warn("Snap/network sync error on connect:", snapErr);
+    }
+    await refreshBalance(selectedNetwork.value);
   } catch (err) {
     console.error('Wallet connection failed:', err);
   }

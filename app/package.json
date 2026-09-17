@@ -9,11 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "genlayer-js": "^1.1.8",
-    "viem": "^2.21.34",
-    "wagmi": "^2.19.5",
+    "@genlayer/transaction-kit": "^0.1.0-rc.2",
+    "@genlayer/transaction-kit-vue": "^0.1.0-rc.2",
+    "genlayer-js": "^2.0.0-rc.1",
     "lucide-vue-next": "^0.503.0",
-    "vue": "^3.4.37"
+    "viem": "^2.21.34",
+    "vue": "^3.4.37",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.2",

@@ -1,7 +1,7 @@
 import { ref, watch } from 'vue';
 import { createClient } from "genlayer-js";
-import { localnet, studionet, testnetBradbury } from "genlayer-js/chains";
-import { wagmiState, connectWallet, config as wagmiConfig } from "./wagmi.js";
+import { localnet, studioDevnet, studionet, testnetBradbury } from "genlayer-js/chains";
+import { wagmiState, connectWallet, config as wagmiConfig, refreshBalance } from "./wagmi.js";
 import { switchChain } from "@wagmi/core";
 
 // ── Network Definitions ──────────────────────────────────
@@ -10,6 +10,7 @@ export const NETWORKS = {
     key: 'studionext',
     name: 'Studio Next',
     chain: {
+      ...studioDevnet,
       id: 61997,
       name: 'GenLayer Studio Next',
       nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
@@ -60,6 +61,7 @@ export function setNetwork(networkKey) {
   if (!NETWORKS[networkKey] || networkKey === 'simulator') return;
   selectedNetwork.value = networkKey;
   localStorage.setItem("selectedNetwork", networkKey);
+  refreshBalance(networkKey);
 }
 
 // ── Client Factory ───────────────────────────────────────

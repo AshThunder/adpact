@@ -486,7 +486,7 @@ import XConnectModal from './components/XConnectModal.vue';
 import { userXProfile } from './services/reputation.js';
 import InfluencerEscrow from './logic/InfluencerEscrow.js';
 import { getContractAddress } from './services/contract_addresses.js';
-import { wagmiState, connectWallet } from './services/wagmi.js';
+import { wagmiState, connectWallet, refreshBalance } from './services/wagmi.js';
 import { selectedNetwork, setNetwork, syncSnapConnection } from './services/genlayer.js';
 
 const showXConnectModal = ref(false);
@@ -576,18 +576,24 @@ const explorerUrl = computed(() => {
   return null;
 });
 
-function onNetworkChange(event) {
+async function onNetworkChange(event) {
   const newNet = event.target.value;
   setNetwork(newNet);
   console.log(`Network switched to: ${newNet}`);
   
-  // Re-verify snap connection if already connected to wallet
   if (wagmiState.isConnected) {
-    syncSnapConnection().catch(err => {
+    try {
+      await syncSnapConnection();
+    } catch (err) {
       console.warn("Failed to automatically sync snap network on select switch:", err);
-    });
+    }
   }
+  await refreshBalance(newNet);
 }
+
+watch(selectedNetwork, (newNet) => {
+  refreshBalance(newNet);
+});
 
 async function triggerConnect() {
   try {

@@ -2,7 +2,7 @@
 // Deployer: 0x25b7a7d21cCf349fbA8245209A25Bbb36fBe4ffD
 
 export const CONTRACT_ADDRESSES = {
-  studionext: '0x71289FfC185e23f75EF935954DF14303f237d9fb', // Configurable / deployed on Studio Next
+  studionext: '0x562827fd4Fe88582f25c12C359030A4200Dae93b', // Deployed on Studio Next (Consensus v0.6)
   studionet: '0x71289FfC185e23f75EF935954DF14303f237d9fb',
   bradbury: '0xeD8F38EdF8aE8Bf95A26108106050f1512852Bac',
   simulator: '', // Set via localStorage or local deploy

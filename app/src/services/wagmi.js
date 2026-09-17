@@ -2,10 +2,11 @@ import { ref, readonly } from 'vue';
 import { createConfig, http, connect, disconnect, getAccount, watchAccount, reconnect, getBalance } from '@wagmi/core';
 import { injected } from '@wagmi/connectors';
 import { createClient } from 'genlayer-js';
-import { studionet as glStudioNet, testnetBradbury as glBradbury, localnet as glLocalnet } from 'genlayer-js/chains';
+import { studioDevnet as glStudioDevnet, studionet as glStudioNet, testnetBradbury as glBradbury, localnet as glLocalnet } from 'genlayer-js/chains';
 
 // ── Custom GenLayer Chains for Wagmi ──────────────────────
 export const studionext = {
+  ...glStudioDevnet,
   id: 61997,
   name: 'GenLayer Studio Next',
   nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
@@ -71,34 +72,37 @@ export const config = createConfig({
 });
 
 // ── Reactive State ────────────────────────────────────────
-const address = ref(null);
-const chainId = ref(null);
-const isConnected = ref(false);
+const isDemo = typeof window !== 'undefined' && window.location.search.includes('demo=true');
+const address = ref(isDemo ? '0x8cbc478963705971f15052e579a8eb4faf7b2211' : null);
+const chainId = ref(isDemo ? 61997 : null);
+const isConnected = ref(isDemo);
 const isConnecting = ref(false);
-const balance = ref(null);
+const balance = ref(isDemo ? { formatted: '10.00', symbol: 'GEN' } : null);
 
 // Fetch balance helper
-async function fetchBalance() {
+export async function fetchBalance(targetNetwork = null) {
   if (!address.value) {
     balance.value = null;
     return;
   }
   try {
-    let chainObj = glStudioNet;
-    let rpcUrl = 'https://studio.genlayer.com/api';
+    const selected = targetNetwork || localStorage.getItem("selectedNetwork") || "studionext";
 
-    // Map chainId.value to correct GenLayer network configurations
-    if (chainId.value === 61997) {
+    let chainObj = studionext;
+    let rpcUrl = 'https://studio-next.genlayer.com/api';
+
+    if (selected === 'studionext') {
       chainObj = studionext;
       rpcUrl = 'https://studio-next.genlayer.com/api';
-    } else if (chainId.value === 4221) {
+    } else if (selected === 'studionet') {
+      chainObj = glStudioNet;
+      rpcUrl = 'https://studio.genlayer.com/api';
+    } else if (selected === 'bradbury') {
       chainObj = glBradbury;
       rpcUrl = 'https://rpc-bradbury.genlayer.com';
-    } else if (chainId.value === 61999) {
-      if (localStorage.getItem("selectedNetwork") === "simulator") {
-        chainObj = glLocalnet;
-        rpcUrl = 'http://127.0.0.1:4000/api';
-      }
+    } else if (selected === 'simulator') {
+      chainObj = glLocalnet;
+      rpcUrl = 'http://127.0.0.1:4000/api';
     }
 
     const client = createClient({
@@ -126,12 +130,18 @@ async function fetchBalance() {
 }
 
 // Expose refresh balance action
-export async function refreshBalance() {
-  await fetchBalance();
+export async function refreshBalance(targetNetwork = null) {
+  await fetchBalance(targetNetwork);
 }
 
 // Update state helper
 function updateAccountState(account) {
+  if (isDemo) {
+    address.value = '0x8cbc478963705971f15052e579a8eb4faf7b2211';
+    isConnected.value = true;
+    balance.value = { formatted: '10.00', symbol: 'GEN' };
+    return;
+  }
   address.value = account.address || null;
   chainId.value = account.chainId || null;
   isConnected.value = account.isConnected || false;
@@ -153,6 +163,12 @@ watchAccount(config, {
 
 // ── Actions ───────────────────────────────────────────────
 export async function connectWallet() {
+  if (isDemo) {
+    address.value = '0x8cbc478963705971f15052e579a8eb4faf7b2211';
+    isConnected.value = true;
+    balance.value = { formatted: '10.00', symbol: 'GEN' };
+    return;
+  }
   if (isConnecting.value) return;
   isConnecting.value = true;
   try {

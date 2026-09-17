@@ -1,17 +1,19 @@
 import { reactive, watch } from 'vue';
 import { wagmiState } from './wagmi.js';
 
+const isDemo = typeof window !== 'undefined' && window.location.search.includes('demo=true');
+
 // Reactive state for the connected user's X profile
 export const userXProfile = reactive({
-  handle: '',
-  score: 75,
-  status: 'UNVERIFIED',
-  reason: '',
-  linkedAt: '',
-  isLinked: false,
+  handle: isDemo ? 'web3_creator' : '',
+  score: isDemo ? 92 : 75,
+  status: isDemo ? 'VERIFIED' : 'UNVERIFIED',
+  reason: isDemo ? 'High engagement, authentic follower ratio and consistent on-chain track record' : '',
+  linkedAt: isDemo ? new Date().toISOString() : '',
+  isLinked: isDemo,
   loading: false,
   challengeCode: '',        // Pending verification challenge code
-  verifiedViaTweet: false,  // True if ownership proven via tweet
+  verifiedViaTweet: isDemo,  // True if ownership proven via tweet
 });
 
 // Reactive state for live X profile preview (fetched from X's public API)

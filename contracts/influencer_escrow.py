@@ -1,6 +1,8 @@
-# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+# { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }
 
+import genlayer as gl
 from genlayer import *
+from genlayer.storage import TreeMap, allow as allow_storage
 from dataclasses import dataclass
 import json
 import datetime
@@ -156,7 +158,7 @@ class Collaboration:
     verdict_history_json: str
 
 
-class InfluencerEscrow(gl.Contract):
+class InfluencerEscrow(gl.contract.Contract):
     campaigns: TreeMap[str, Campaign]
     applications: TreeMap[str, TreeMap[Address, Application]]
     collaborations: TreeMap[str, TreeMap[Address, Collaboration]]
@@ -186,7 +188,13 @@ class InfluencerEscrow(gl.Contract):
         # Validate payment structure and optional reputation score requirement
         min_rep = u256(0)
         try:
-            struct = json.loads(payment_structure_json)
+            if isinstance(payment_structure_json, dict):
+                struct = payment_structure_json
+                payment_structure_str = json.dumps(payment_structure_json)
+            else:
+                struct = _parse_json(payment_structure_json)
+                payment_structure_str = str(payment_structure_json)
+
             initial = int(struct.get("initial", 30))
             retention = int(struct.get("retention", 70))
             if initial + retention != 100:
@@ -200,6 +208,9 @@ class InfluencerEscrow(gl.Contract):
                 raise e
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Invalid payment structure: {str(e)}")
 
+        hashtags_str = json.dumps(required_hashtags_json) if isinstance(required_hashtags_json, (list, dict)) else str(required_hashtags_json)
+        keywords_str = json.dumps(required_keywords_json) if isinstance(required_keywords_json, (list, dict)) else str(required_keywords_json)
+
         self.campaign_count += 1
         campaign_id = f"camp_{self.campaign_count}"
 
@@ -211,11 +222,11 @@ class InfluencerEscrow(gl.Contract):
             atto_budget_per_creator=atto_budget_per_creator,
             max_creators=max_creators,
             platform=platform,
-            required_hashtags=required_hashtags_json,
-            required_keywords=required_keywords_json,
+            required_hashtags=hashtags_str,
+            required_keywords=keywords_str,
             retention_duration_seconds=retention_duration_seconds,
             posting_deadline=posting_deadline,
-            payment_structure=payment_structure_json,
+            payment_structure=payment_structure_str,
             active_creators_count=u256(0),
             status="OPEN_FOR_APPLICATIONS",
             min_reputation_score=min_rep

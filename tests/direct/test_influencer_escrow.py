@@ -39,11 +39,28 @@ def test_influencer_escrow_lifecycle(direct_vm, direct_deploy, direct_alice, dir
     
     assert campaign_id == "camp_1"
     
+    # Also verify creating campaign with raw dict and list (as passed by CLI/web3)
+    camp_dict_id = contract.create_campaign(
+        title="Dict Campaign",
+        description="Created with raw dicts and lists",
+        atto_budget_per_creator=10**18,
+        max_creators=2,
+        platform="twitter",
+        required_hashtags_json=["#crypto"],
+        required_keywords_json=["web3"],
+        retention_duration_seconds=3600,
+        posting_deadline="2026-06-01T00:00:00Z",
+        payment_structure_json={"initial": 50, "retention": 50}
+    )
+    assert camp_dict_id == "camp_2"
+    
     # Check campaigns
     campaigns = contract.get_campaigns()
     assert "camp_1" in campaigns
+    assert "camp_2" in campaigns
     assert campaigns["camp_1"].title == "GenLayer Promo Campaign"
     assert campaigns["camp_1"].status == "OPEN_FOR_APPLICATIONS"
+    assert campaigns["camp_2"].title == "Dict Campaign"
     
     # 2. Apply to Campaign (Bob is the Creator)
     direct_vm.sender = direct_bob

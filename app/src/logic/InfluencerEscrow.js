@@ -17,6 +17,38 @@ class InfluencerEscrow {
     return getGenLayerClient(this.accountAddress);
   }
 
+  // ─── Demo Mode Simulation ───────────────────────────────────
+  async _simulateIfDemo(onTxHash) {
+    if (typeof window !== 'undefined' && window.location.search.includes('demo=true')) {
+      const mockHash = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+      if (onTxHash) onTxHash(mockHash);
+      await new Promise(r => setTimeout(r, 1000));
+      return { status: 'ACCEPTED', transactionHash: mockHash, consensus_data: { leader_receipt: [{ execution_result: 'SUCCESS' }] } };
+    }
+    return null;
+  }
+
+  // ─── Fee Estimation ─────────────────────────────────────────
+  // Studio Next (Consensus v0.6) requires a non-zero fee deposit
+  // on every write transaction.  We estimate fees once per write
+  // and merge them into the writeContract options.
+
+  async _estimateFees(client) {
+    try {
+      const estimate = await client.estimateTransactionFees();
+      return {
+        distribution: estimate.distribution,
+        feeValue: estimate.feeValue,
+      };
+    } catch (err) {
+      console.warn("Fee estimation failed, using fallback:", err);
+      // Fallback: generous static fee (≈0.001 GEN) to avoid FeeValueMustBeNonZero
+      return {
+        feeValue: 1_000_000_000_000_000n,
+      };
+    }
+  }
+
   // ─── Read Methods ───────────────────────────────────────────
 
   async getCampaigns() {
@@ -120,8 +152,12 @@ class InfluencerEscrow {
     postingDeadline,
     paymentStructure,
   }, onTxHash = null) {
+    const demoSim = await this._simulateIfDemo(onTxHash);
+    if (demoSim) return demoSim;
+
     // Sync MetaMask & GenLayer snap connection before execution
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
@@ -139,18 +175,24 @@ class InfluencerEscrow {
         JSON.stringify(paymentStructure),
       ],
       value: 0n,
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
   }
 
   async applyToCampaign(campaignId, twitterHandle, proposalMessage, onTxHash = null) {
+    const demoSim = await this._simulateIfDemo(onTxHash);
+    if (demoSim) return demoSim;
+
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "apply_to_campaign",
       args: [campaignId, twitterHandle, proposalMessage],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -158,11 +200,13 @@ class InfluencerEscrow {
 
   async approveCreator(campaignId, creatorAddress, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "approve_creator",
       args: [campaignId, creatorAddress],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -170,12 +214,14 @@ class InfluencerEscrow {
 
   async depositEscrow(campaignId, creatorAddress, amount, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "deposit_escrow",
       args: [campaignId, creatorAddress],
       value: BigInt(amount),
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -183,11 +229,13 @@ class InfluencerEscrow {
 
   async submitDraft(campaignId, draftText, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "submit_draft",
       args: [campaignId, draftText],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -195,11 +243,13 @@ class InfluencerEscrow {
 
   async approveDraft(campaignId, creatorAddress, approved, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "approve_draft",
       args: [campaignId, creatorAddress, approved],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -207,11 +257,13 @@ class InfluencerEscrow {
 
   async submitLivePost(campaignId, liveTweetUrl, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "submit_live_post",
       args: [campaignId, liveTweetUrl],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -219,11 +271,13 @@ class InfluencerEscrow {
 
   async verifyLivePost(campaignId, creatorAddress, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "verify_live_post",
       args: [campaignId, creatorAddress],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash, 20);
@@ -231,11 +285,13 @@ class InfluencerEscrow {
 
   async verifyRetention(campaignId, creatorAddress, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "verify_retention",
       args: [campaignId, creatorAddress],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash, 20);
@@ -243,11 +299,13 @@ class InfluencerEscrow {
 
   async cancelCollaboration(campaignId, creatorAddress, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "cancel_collaboration",
       args: [campaignId, creatorAddress],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash, 20);
@@ -266,11 +324,13 @@ class InfluencerEscrow {
 
   async withdrawBalance(onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "withdraw_balance",
       args: [],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -320,11 +380,13 @@ class InfluencerEscrow {
 
   async requestXChallenge(twitterHandle, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "request_x_challenge",
       args: [twitterHandle],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -332,11 +394,13 @@ class InfluencerEscrow {
 
   async verifyXAccount(tweetUrl = "", onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "verify_x_account",
       args: [tweetUrl],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -376,11 +440,13 @@ class InfluencerEscrow {
 
   async auditCreatorReputation(creatorAddress, onTxHash = null) {
     const activeClient = await syncSnapConnection();
+    const fees = await this._estimateFees(activeClient);
 
     const txHash = await activeClient.writeContract({
       address: this.contractAddress,
       functionName: "audit_creator_reputation",
       args: [creatorAddress],
+      fees,
     });
     if (onTxHash) onTxHash(txHash);
     return this._waitFinalized(txHash);
@@ -412,3 +478,4 @@ class InfluencerEscrow {
 }
 
 export default InfluencerEscrow;
+
