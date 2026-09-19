@@ -41,10 +41,22 @@ class InfluencerEscrow {
         feeValue: estimate.feeValue,
       };
     } catch (err) {
-      console.warn("Fee estimation failed, using fallback:", err);
-      // Fallback: generous static fee (≈0.001 GEN) to avoid FeeValueMustBeNonZero
+      console.warn("Fee estimation failed, using fallback with distribution:", err);
+      // Fallback: consensus fee distribution + fee deposit to avoid FeeValueMustBeNonZero
       return {
-        feeValue: 1_000_000_000_000_000n,
+        distribution: {
+          leaderTimeunitsAllocation: 100n,
+          validatorTimeunitsAllocation: 200n,
+          appealRounds: 0n,
+          executionBudgetPerRound: 25000000000000000n,
+          executionConsumed: 0n,
+          totalMessageFees: 0n,
+          rotations: [3n],
+          maxPriceGenPerTimeUnit: 2n,
+          storageFeeMaxGasPrice: 300000000n,
+          receiptFeeMaxGasPrice: 300000000n,
+        },
+        feeValue: 100_000_000_000_000n,
       };
     }
   }
@@ -454,14 +466,35 @@ class InfluencerEscrow {
 
   // ─── Helpers ────────────────────────────────────────────────
 
-  async _waitFinalized(txHash, retries = 60) {
-    const receipt = await this.client.waitForTransactionReceipt({
-      hash: txHash,
-      status: "ACCEPTED",
-      interval: 5000,
-      retries,
-    });
-    return receipt;
+  async _waitFinalized(txHash, retries = 50, activeClient = null) {
+    const client = activeClient || this.client;
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const receipt = await client.waitForTransactionReceipt({
+          hash: txHash,
+          waitUntil: "decided",
+          interval: 3000,
+          retries: 2,
+        });
+        if (receipt) return receipt;
+      } catch (err) {
+        const msg = (err?.message || err?.details || String(err)).toLowerCase();
+        const isTransientNotFound =
+          msg.includes("not found") ||
+          msg.includes("resourcenotfound") ||
+          msg.includes("could not be found") ||
+          msg.includes("not yet") ||
+          msg.includes("timed out");
+
+        if (isTransientNotFound && attempt < retries - 1) {
+          console.log(`[InfluencerEscrow] Waiting for transaction ${txHash.slice(0, 10)}... (attempt ${attempt + 1}/${retries})`);
+          await new Promise((r) => setTimeout(r, 3000));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error(`Timed out waiting for transaction ${txHash} confirmation.`);
   }
 
   _mapToObj(mapOrObj) {

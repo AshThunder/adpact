@@ -76,6 +76,7 @@ export function getGenLayerClient(accountAddress = null) {
         public: { http: [net.rpcUrl] },
       }
     },
+    endpoint: net.rpcUrl,
     transport: net.rpcUrl,
     ...(accountAddress ? { account: accountAddress } : {}),
   };
@@ -129,10 +130,11 @@ export async function syncSnapConnection() {
   const client = getGenLayerClient(wagmiState.address);
 
   // Map our key to snap connect's network argument:
-  // snap connect accepts 'studionet', 'testnetBradbury', 'localnet'
+  // snap connect accepts 'studionet', 'studioDevnet', 'testnetBradbury', 'localnet'
   const snapNetworkKey =
-    selectedNetwork.value === 'bradbury' ? 'testnetBradbury' :
-      selectedNetwork.value === 'simulator' ? 'localnet' : 'studionet';
+    selectedNetwork.value === 'studionext' ? 'studioDevnet' :
+      selectedNetwork.value === 'bradbury' ? 'testnetBradbury' :
+        selectedNetwork.value === 'simulator' ? 'localnet' : 'studionet';
 
   console.log(`Connecting GenLayer Snap to network: ${snapNetworkKey}`);
   try {
