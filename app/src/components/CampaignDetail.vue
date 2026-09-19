@@ -604,16 +604,45 @@
 
         <!-- Un-Collaborated Creator Apply Form -->
         <section v-else class="bg-surface-container-lowest border border-hairline rounded-xl p-lg md:p-xl shadow-sm text-left">
-          <div v-if="myApplication">
-            <h3 class="font-headline text-headline text-primary tracking-tight mb-md">My Application Status</h3>
-            <div class="bg-surface-container-low border border-hairline rounded-xl p-lg flex justify-between items-center mb-md">
-              <div>
-                <span class="font-body text-body-sm font-bold text-primary block">@{{ myApplication.twitter_handle }}</span>
-                <span class="font-caption text-caption text-ink-subtle block mt-xxs">Proposal: "{{ myApplication.proposal_message }}"</span>
-              </div>
-              <span class="px-md py-sm bg-surface-bright border border-hairline text-ink-muted font-mono text-xs rounded-xl uppercase font-bold">
-                PENDING APPROVAL
+          <div v-if="myApplication" class="space-y-md">
+            <div class="flex items-center justify-between">
+              <h3 class="font-headline text-headline text-primary tracking-tight flex items-center gap-2">
+                <span class="material-symbols-outlined text-report-green text-[24px]">verified</span>
+                Application Registered
+              </h3>
+              <span class="px-3 py-1 bg-fin-orange/10 border border-fin-orange/20 text-fin-orange font-mono text-xs rounded-full uppercase font-bold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-fin-orange animate-ping"></span>
+                Pending Review
               </span>
+            </div>
+            
+            <div class="bg-surface-container-low border border-hairline rounded-xl p-lg space-y-md">
+              <div class="flex items-start justify-between gap-md">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-body text-body font-bold text-primary">@{{ myApplication.twitter_handle }}</span>
+                    <span class="font-mono text-xs text-ink-subtle">({{ (myApplication.creator || '').slice(0, 6) }}...{{ (myApplication.creator || '').slice(-4) }})</span>
+                  </div>
+                  <p class="font-body text-body-sm text-ink-subtle mt-xs bg-surface-1/60 p-sm rounded-lg border border-hairline/50">
+                    "{{ myApplication.proposal_message }}"
+                  </p>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between pt-sm border-t border-hairline/50 text-caption text-ink-muted">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">info</span>
+                  Submitted to GenLayer intelligent escrow contract
+                </span>
+                <button 
+                  type="button" 
+                  @click="loadSubData" 
+                  class="text-primary hover:underline font-mono text-xs flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-[14px]">refresh</span>
+                  Refresh status
+                </button>
+              </div>
             </div>
           </div>
           <div v-else-if="isExpired">
@@ -696,6 +725,76 @@
                 Submit Application
               </button>
             </form>
+          </div>
+        </section>
+
+        <!-- All Applications Received (Public Transparency View) -->
+        <section class="space-y-md">
+          <div class="flex items-center justify-between">
+            <h3 class="font-subhead text-subhead text-primary">
+              All Applicants ({{ applications.filter(a => a.status === 'PENDING').length }})
+            </h3>
+            <button 
+              @click="loadSubData" 
+              class="px-2.5 py-1 rounded-lg border border-hairline text-caption text-ink-subtle hover:text-primary flex items-center gap-1"
+              title="Refresh applications"
+            >
+              <span class="material-symbols-outlined text-[14px]">refresh</span>
+              Refresh
+            </button>
+          </div>
+          
+          <div class="bg-surface-1 border border-hairline rounded-xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-surface-container-lowest border-b border-hairline">
+                    <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md">Creator</th>
+                    <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md">𝕏 Handle</th>
+                    <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md">Proposal</th>
+                    <th class="font-eyebrow text-eyebrow text-ink-subtle font-medium p-md text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="font-body text-body-sm divide-y divide-hairline">
+                  <tr v-if="applications.filter(a => a.status === 'PENDING').length === 0">
+                    <td colspan="4" class="p-lg text-center text-ink-subtle font-body text-body-sm bg-surface-bright">
+                      No applications received yet.
+                    </td>
+                  </tr>
+                  <tr 
+                    v-for="app in applications.filter(a => a.status === 'PENDING')" 
+                    :key="app.creator" 
+                    class="hover:bg-surface-container-low transition-colors"
+                    :class="{ 'bg-fin-orange/5': props.account && props.account.address && app.creator.toLowerCase() === props.account.address.toLowerCase() }"
+                  >
+                    <td class="p-md">
+                      <div class="flex items-center gap-sm">
+                        <span class="font-mono text-xs text-primary font-medium">
+                          {{ app.creator.slice(0, 6) }}...{{ app.creator.slice(-4) }}
+                        </span>
+                        <span 
+                          v-if="props.account && props.account.address && app.creator.toLowerCase() === props.account.address.toLowerCase()" 
+                          class="px-1.5 py-0.5 rounded bg-fin-orange text-white text-[10px] font-bold"
+                        >
+                          YOU
+                        </span>
+                      </div>
+                    </td>
+                    <td class="p-md">
+                      <span class="font-medium text-primary">@{{ app.twitter_handle }}</span>
+                    </td>
+                    <td class="p-md text-ink-subtle">
+                      {{ app.proposal_message }}
+                    </td>
+                    <td class="p-md text-right">
+                      <span class="px-2 py-0.5 rounded font-mono text-[11px] font-bold uppercase bg-fin-orange/10 text-fin-orange border border-fin-orange/20">
+                        {{ app.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -977,6 +1076,8 @@ async function runWithToast(title, actionPromiseCreator, successTitle, successMs
     
     await actionPromiseCreator(onTxHash);
     
+    // Brief delay to ensure consensus state propagation across RPC nodes
+    await new Promise(r => setTimeout(r, 1500));
     await loadSubData();
     emit('refresh');
     
@@ -1162,6 +1263,13 @@ function simulateAdvertiserAction(actionName) {
     alert(`${actionName} is governed by on-chain AI consensus.`);
   }
 }
+
+watch(
+  () => [props.campaign?.id, props.account?.address],
+  () => {
+    loadSubData();
+  }
+);
 
 onMounted(() => {
   loadSubData();

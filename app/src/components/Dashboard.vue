@@ -149,7 +149,7 @@
         <div v-if="selectedCampaign" class="detail-container">
           <CampaignDetail 
             :campaign="selectedCampaign" 
-            :account="account" 
+            :account="props.account || account" 
             :escrow="escrow" 
             @refresh="fetchData"
             @back="selectedCampaign = null"
@@ -320,7 +320,18 @@
               <p class="font-eyebrow text-body-sm text-ink-subtle uppercase tracking-wider mb-xs">Creator Hub</p>
               <h2 class="font-headline text-headline text-primary">My Applications & Collaborations</h2>
             </div>
-            <div v-if="loadingApplications" class="spinner border-2 border-primary border-t-transparent w-5 h-5 rounded-full animate-spin"></div>
+            <div class="flex items-center gap-sm">
+              <button 
+                @click="fetchUserApplications()" 
+                class="px-3 py-1.5 rounded-xl border border-hairline text-caption font-button text-ink-subtle hover:text-primary hover:bg-surface-container flex items-center gap-1.5 transition-all"
+                :disabled="loadingApplications"
+                title="Refresh Applications"
+              >
+                <span class="material-symbols-outlined text-[16px]" :class="{ 'animate-spin': loadingApplications }">refresh</span>
+                Refresh
+              </button>
+              <div v-if="loadingApplications" class="spinner border-2 border-primary border-t-transparent w-5 h-5 rounded-full animate-spin"></div>
+            </div>
           </div>
 
           <!-- Empty State -->
@@ -506,10 +517,17 @@
                   Expired
                 </span>
                 <span 
-                  v-else-if="camp.advertiser.toLowerCase() === account.address.toLowerCase()" 
+                  v-else-if="props.account && props.account.address && camp.advertiser.toLowerCase() === props.account.address.toLowerCase()" 
                   class="bg-report-green/10 border border-report-green/20 text-report-green px-2 py-0.5 md:px-2.5 md:py-1 rounded font-mono text-[10px] md:text-[11px] uppercase font-bold"
                 >
                   Advertiser
+                </span>
+                <span 
+                  v-else-if="userApplications.some(a => a.id === camp.id)"
+                  class="bg-fin-orange/10 border border-fin-orange/20 text-fin-orange px-2 py-0.5 md:px-2.5 md:py-1 rounded font-mono text-[10px] md:text-[11px] uppercase font-bold flex items-center gap-1"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-fin-orange"></span>
+                  Applied
                 </span>
                 <span v-else class="font-mono text-mono text-ink-subtle text-[12px] md:text-[13px]">Active</span>
               </div>
@@ -642,6 +660,11 @@ watch(() => props.activeTab, (newTab) => {
   if (newTab && newTab !== selectedTab.value) {
     selectedTab.value = newTab;
     selectedCampaign.value = null;
+    if (newTab === 'my_applications') {
+      fetchUserApplications();
+    } else if (newTab === 'all' || newTab === 'my_campaigns') {
+      fetchData();
+    }
   }
 });
 
@@ -649,6 +672,11 @@ function selectTab(tabName) {
   selectedTab.value = tabName;
   selectedCampaign.value = null;
   emit('update:activeTab', tabName);
+  if (tabName === 'my_applications') {
+    fetchUserApplications();
+  } else if (tabName === 'all' || tabName === 'my_campaigns') {
+    fetchData();
+  }
 }
 
 // Reactive contract address for the current network (used for warning banner)
@@ -715,13 +743,22 @@ async function fetchData() {
   }
 }
 
-async function fetchUserApplications(campaignList) {
-  if (!escrow.value || !props.account) return;
+async function fetchUserApplications(campaignList = null) {
+  if (!escrow.value || !props.account || !props.account.address) return;
   loadingApplications.value = true;
   const results = [];
   try {
+    let list = campaignList;
+    if (!list || list.length === 0) {
+      if (campaigns.value.length === 0) {
+        list = await escrow.value.getCampaigns();
+        campaigns.value = list;
+      } else {
+        list = campaigns.value;
+      }
+    }
     const userApps = await escrow.value.getUserApplications(props.account.address);
-    for (const camp of campaignList) {
+    for (const camp of list) {
       const appInfo = userApps[camp.id];
       if (appInfo) {
         results.push({
